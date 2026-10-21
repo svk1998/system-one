@@ -1,0 +1,1365 @@
+<!doctype html><html><head><meta charset=utf8><meta name=viewport content="width=device-width,initial-scale=1,viewport-fit=cover"><style>:root{color-scheme:light;box-sizing:border-box;padding-top:env(safe-area-inset-top,0px);padding-bottom:env(safe-area-inset-bottom,0px)}html{scroll-padding-top:env(safe-area-inset-top,0px)}body{margin:0;padding:0;font:14px -apple-system,BlinkMacSystemFont,sans-serif;background:#fff;color:#000}img{max-width:100%}[hidden]:not([hidden=until-found i]){display:none!important}</style></head><body>
+<title>Decision Model Explorer</title>
+<meta name="claude:viewport-fit-sides" content="cover">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=IBM+Plex+Mono:wght@400;500;600&family=IBM+Plex+Sans:wght@400;500;600;700&display=swap">
+<style>
+:root{
+  --bg:#f4f3ee; --surface:#fcfcfb; --surface-2:#efeee8; --sunk:#e9e8e1;
+  --ink:#1c1c1a; --ink-2:#55544e; --muted:#7f7d75; --line:#e1e0d9; --line-2:#cdcbc2;
+  --open:#2a78d6; --closed:#eb6834;
+  --sel:#1c1c1a; --sel-ink:#fcfcfb;
+  --shadow:0 1px 2px rgba(28,28,20,.06),0 8px 24px rgba(28,28,20,.10);
+  --sans:"IBM Plex Sans",system-ui,-apple-system,"Segoe UI",Roboto,sans-serif;
+  --mono:"IBM Plex Mono",ui-monospace,SFMono-Regular,Menlo,Consolas,monospace;
+}
+@media (prefers-color-scheme:dark){
+  :root:not([data-theme="light"]){
+    --bg:#111110; --surface:#1a1a19; --surface-2:#232321; --sunk:#141413;
+    --ink:#ecebe5; --ink-2:#aaa8a0; --muted:#7f7d76; --line:#2c2c2a; --line-2:#3c3c39;
+    --open:#3987e5; --closed:#d95926;
+    --sel:#ecebe5; --sel-ink:#141413;
+    --shadow:0 1px 2px rgba(0,0,0,.4),0 10px 28px rgba(0,0,0,.45);
+    color-scheme:dark;
+  }
+}
+:root[data-theme="dark"]{
+  --bg:#111110; --surface:#1a1a19; --surface-2:#232321; --sunk:#141413;
+  --ink:#ecebe5; --ink-2:#aaa8a0; --muted:#7f7d76; --line:#2c2c2a; --line-2:#3c3c39;
+  --open:#3987e5; --closed:#d95926;
+  --sel:#ecebe5; --sel-ink:#141413;
+  --shadow:0 1px 2px rgba(0,0,0,.4),0 10px 28px rgba(0,0,0,.45);
+  color-scheme:dark;
+}
+*{box-sizing:border-box}
+[hidden]{display:none!important}
+body{margin:0;background:var(--bg);color:var(--ink);font:15px/1.5 var(--sans);-webkit-font-smoothing:antialiased}
+body::before{content:"";position:fixed;inset:0 0 auto;height:env(safe-area-inset-top,0px);z-index:10;background:var(--bg)}
+a{color:inherit;text-decoration-color:var(--line-2);text-underline-offset:3px}
+a:hover{text-decoration-color:currentColor}
+button,input,select{font:inherit;color:inherit}
+:focus-visible{outline:2px solid var(--ink);outline-offset:2px}
+.wrap{max-width:1200px;margin-inline:auto;padding-left:max(16px,env(safe-area-inset-left,0px));padding-right:max(16px,env(safe-area-inset-right,0px))}
+
+/* header */
+.top .wrap{padding-block:28px 20px}
+.kicker{font:500 11.5px/1.4 var(--mono);letter-spacing:.08em;text-transform:uppercase;color:var(--muted)}
+h1{font-size:clamp(26px,4.2vw,38px);line-height:1.08;margin:8px 0 10px;letter-spacing:-.015em;font-weight:650;text-wrap:balance}
+.lede{max-width:70ch;color:var(--ink-2);margin:0}
+.prims{display:flex;flex-wrap:wrap;align-items:center;gap:6px;margin-top:14px;font-size:12.5px;color:var(--muted)}
+.prim{font:12px/1.6 var(--mono);padding:1px 8px;border:1px solid var(--line-2);border-radius:999px;color:var(--ink-2);background:var(--surface)}
+.stats{display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:10px;margin-top:22px}
+.stat{background:var(--surface);border:1px solid var(--line);border-radius:12px;padding:12px 14px;min-width:0}
+.stat .k{font-size:11.5px;color:var(--muted);text-transform:uppercase;letter-spacing:.07em;font-weight:500}
+.stat .v{font:600 26px/1.15 var(--mono);font-variant-numeric:tabular-nums;letter-spacing:-.02em;margin-top:4px}
+.stat .v small{font-size:13px;font-weight:500;color:var(--ink-2);letter-spacing:0}
+.stat .d{font-size:13px;color:var(--ink-2);margin-top:2px;overflow-wrap:anywhere}
+@media (max-width:760px){.stats{grid-template-columns:repeat(2,minmax(0,1fr))}.stat .v{font-size:21px}}
+
+/* tabs */
+.tabbar{position:sticky;top:env(safe-area-inset-top,0px);z-index:20;background:var(--bg);border-bottom:1px solid var(--line)}
+.tabs{display:flex;gap:2px;overflow-x:auto;scrollbar-width:none}
+.tabs::-webkit-scrollbar{display:none}
+.tab{appearance:none;border:0;background:none;font-weight:500;font-size:14.5px;color:var(--ink-2);padding:12px 12px 10px;border-bottom:2px solid transparent;cursor:pointer;white-space:nowrap;display:inline-flex;align-items:center;gap:7px}
+.tab:hover{color:var(--ink)}
+.tab[aria-selected="true"]{color:var(--ink);border-bottom-color:var(--ink)}
+.count{font:600 11px/1 var(--mono);background:var(--sel);color:var(--sel-ink);border-radius:999px;padding:3px 6px;min-width:18px;text-align:center}
+.count:empty{display:none}
+
+main .wrap{padding-block:20px 120px}
+.view{display:grid;gap:16px}
+.view>*{min-width:0}
+#cmpBody{display:grid;gap:16px;min-width:0}
+.h2{font-size:19px;font-weight:600;margin:0;letter-spacing:-.005em}
+.sub{color:var(--ink-2);font-size:14px;margin:2px 0 0;max-width:75ch}
+.muted{color:var(--muted)}
+.card{background:var(--surface);border:1px solid var(--line);border-radius:14px;padding:16px;min-width:0}
+.card h3{font-size:16px;margin:0;font-weight:600}
+.card .take{margin:4px 0 0;color:var(--ink-2);font-size:14px;max-width:80ch}
+.foot{font-size:12.5px;color:var(--muted);margin:10px 0 0}
+
+/* controls */
+.filters{display:flex;flex-wrap:wrap;gap:10px 14px;align-items:center}
+.field{display:flex;align-items:center;gap:8px;min-width:0}
+.field>label,.flabel{font-size:12px;color:var(--muted);text-transform:uppercase;letter-spacing:.06em;font-weight:500;white-space:nowrap}
+.search{flex:1 1 260px;position:relative}
+.search input{width:100%;padding:9px 12px 9px 34px;border:1px solid var(--line-2);border-radius:10px;background:var(--surface);outline:none}
+.search input:focus{border-color:var(--ink)}
+.search svg{position:absolute;left:11px;top:50%;transform:translateY(-50%);width:15px;height:15px;stroke:var(--muted);fill:none;stroke-width:2}
+.seg{display:inline-flex;border:1px solid var(--line-2);border-radius:10px;overflow:hidden;background:var(--surface);flex-wrap:wrap}
+.seg button{appearance:none;border:0;background:none;padding:6px 11px;font-size:13.5px;color:var(--ink-2);cursor:pointer;white-space:nowrap}
+.seg button+button{border-left:1px solid var(--line)}
+.seg button[aria-pressed="true"]{background:var(--sel);color:var(--sel-ink)}
+.seg.pills{border:0;background:none;gap:6px;overflow:visible}
+.seg.pills button{border:1px solid var(--line-2);border-radius:999px;padding:5px 12px;background:var(--surface)}
+.seg.pills button+button{border-left:1px solid var(--line-2)}
+.seg.pills button[aria-pressed="true"]{background:var(--sel);color:var(--sel-ink);border-color:var(--sel)}
+select{appearance:none;-webkit-appearance:none;border:1px solid var(--line-2);border-radius:10px;background:var(--surface) url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='10' height='6'%3E%3Cpath d='M1 1l4 4 4-4' fill='none' stroke='%237f7d75' stroke-width='1.5'/%3E%3C/svg%3E") no-repeat right 10px center;padding:6px 28px 6px 10px;font-size:13.5px;cursor:pointer;max-width:100%}
+.check{display:inline-flex;align-items:center;gap:7px;font-size:13.5px;color:var(--ink-2);cursor:pointer;white-space:nowrap}
+input[type=checkbox]{accent-color:var(--sel);width:16px;height:16px;margin:0;cursor:pointer}
+.btn{appearance:none;border:1px solid var(--line-2);background:var(--surface);border-radius:10px;padding:6px 12px;font-size:13.5px;cursor:pointer;color:var(--ink);white-space:nowrap}
+.btn:hover{border-color:var(--ink)}
+.btn.primary{background:var(--sel);color:var(--sel-ink);border-color:var(--sel)}
+.btn.ghost{border-color:transparent;background:none;color:var(--ink-2)}
+.btn.ghost:hover{color:var(--ink)}
+.btn[disabled]{opacity:.45;cursor:not-allowed}
+.gpu{display:flex;flex-wrap:wrap;gap:8px;align-items:center;padding:6px 8px 6px 10px;border:1px dashed var(--line-2);border-radius:12px}
+.status{display:flex;flex-wrap:wrap;gap:6px 16px;align-items:baseline;font-size:13px;color:var(--ink-2)}
+.status b{font-family:var(--mono);color:var(--ink)}
+.est{font-size:12.5px;color:var(--muted)}
+
+/* table */
+.tablewrap{overflow-x:auto;border:1px solid var(--line);border-radius:14px;background:var(--surface)}
+table.grid{border-collapse:separate;border-spacing:0;width:100%;font-size:13.5px}
+.grid th,.grid td{padding:9px 9px;border-bottom:1px solid var(--line);text-align:left;white-space:nowrap;vertical-align:middle}
+.grid tbody tr:last-child>td{border-bottom:0}
+.grid th{font-size:11.5px;font-weight:500;letter-spacing:.05em;text-transform:uppercase;color:var(--muted);background:var(--surface);padding-top:11px}
+.grid th.num,.grid td.num{text-align:right}
+.grid td.num{font-family:var(--mono);font-variant-numeric:tabular-nums;font-size:13px}
+.grid td.num.top{font-weight:600}
+.grid td.na{color:var(--muted)}
+.sortbtn{appearance:none;border:0;background:none;padding:0;font:inherit;letter-spacing:inherit;text-transform:inherit;color:inherit;cursor:pointer;display:inline-flex;align-items:center;gap:4px}
+.sortbtn:hover{color:var(--ink)}
+th[aria-sort] .sortbtn{color:var(--ink)}
+.arrow{font-family:var(--mono);font-size:10px;width:8px}
+.c-pick{position:sticky;left:0;z-index:2;background:var(--surface);width:38px;min-width:38px;padding-left:11px!important;padding-right:11px!important}
+.c-model{position:sticky;left:38px;z-index:2;background:var(--surface);min-width:160px;max-width:210px;white-space:normal!important;box-shadow:inset -1px 0 0 var(--line)}
+.grid tbody tr:hover>td,.grid tbody tr:hover>td.c-pick,.grid tbody tr:hover>td.c-model{background:var(--surface-2)}
+.grid tr.isopen>td{background:var(--surface-2)}
+.mname{appearance:none;border:0;background:none;padding:0;text-align:left;cursor:pointer;font-weight:600;font-size:14px;line-height:1.3;color:var(--ink)}
+.mname:hover{text-decoration:underline;text-underline-offset:3px;text-decoration-color:var(--line-2)}
+.mmaker{display:block;font-size:12.5px;color:var(--muted);line-height:1.3;margin-top:1px}
+.acc{display:inline-flex;align-items:center;gap:7px}
+.mk{display:inline-block;width:9px;height:9px;flex:none}
+.mk.open{background:var(--open);border-radius:50%}
+.mk.closed{background:var(--closed);transform:rotate(45deg) scale(.86);border-radius:1.5px}
+.mk.ref{width:16px;height:0;border-top:1.5px dashed var(--ink-2)}
+.mk.front{width:16px;height:0;border-top:1.5px solid var(--ink-2);opacity:.7}
+.mk.pick{width:12px;height:12px;border:2px solid var(--ink);border-radius:50%}
+.selfrep{color:var(--muted)}
+td.detailcell{padding:0!important;background:var(--surface-2)!important}
+.detail{position:sticky;left:0;width:var(--tw,100%);padding:14px 16px 16px;display:grid;gap:12px;white-space:normal}
+.kv{display:grid;grid-template-columns:repeat(auto-fill,minmax(210px,1fr));gap:8px 18px;margin:0}
+.kv div{min-width:0}
+.kv dt{font-size:11.5px;color:var(--muted);text-transform:uppercase;letter-spacing:.06em}
+.kv dd{margin:1px 0 0;font-size:13.5px;overflow-wrap:anywhere}
+.kv dd.mono{font-family:var(--mono);font-size:13px}
+.note{font-size:13.5px;color:var(--ink-2);max-width:90ch;margin:0}
+.drow{display:flex;flex-wrap:wrap;gap:10px;align-items:center}
+
+/* charts */
+.chartgrid{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:16px}
+.chartgrid .wide{grid-column:1/-1}
+@media (max-width:900px){.chartgrid{grid-template-columns:minmax(0,1fr)}}
+.cardhead{display:flex;flex-wrap:wrap;justify-content:space-between;gap:10px 16px;align-items:flex-start}
+.cardhead>div:first-child{min-width:0;flex:1 1 300px}
+.legend{display:flex;flex-wrap:wrap;gap:6px 16px;font-size:12.5px;color:var(--ink-2);margin:12px 0 4px}
+.legend span{display:inline-flex;align-items:center;gap:6px}
+.chost{position:relative;width:100%;min-height:120px;margin-top:6px}
+svg.chart{display:block;width:100%;height:auto;overflow:visible}
+.chart text{font-family:var(--sans);font-size:11px;fill:var(--muted)}
+.chart .tick{font-family:var(--mono);font-size:10.5px;fill:var(--muted)}
+.chart .ttl{font-size:11.5px;fill:var(--ink-2)}
+.chart .gridl{stroke:var(--line);stroke-width:1}
+.chart .base{stroke:var(--line-2);stroke-width:1}
+.chart .strip{fill:var(--surface-2)}
+.chart .ref{stroke:var(--ink-2);stroke-width:1.5;stroke-dasharray:5 4;fill:none}
+.chart .reflab{fill:var(--ink-2);font-weight:500;paint-order:stroke;stroke:var(--surface);stroke-width:3px;stroke-linejoin:round}
+.chart .dot{stroke:var(--surface);stroke-width:2}
+.chart .dot.open{fill:var(--open)}
+.chart .dot.closed{fill:var(--closed)}
+.chart .pickring{fill:none;stroke:var(--ink);stroke-width:2}
+.chart .lab{fill:var(--ink);font-size:11px;font-weight:500;paint-order:stroke;stroke:var(--surface);stroke-width:3.5px;stroke-linejoin:round}
+.chart .hit{fill:transparent;cursor:pointer}
+.chart .front{fill:none;stroke:var(--ink-2);stroke-width:1.5;opacity:.55}
+.empty{padding:28px 8px;text-align:center;color:var(--muted);font-size:14px}
+
+.hb{display:grid;gap:12px;margin-top:8px}
+.hb-row{display:grid;grid-template-columns:var(--lead,92px) minmax(0,1fr) 58px;grid-template-rows:auto 16px;column-gap:10px;row-gap:3px;border-radius:6px}
+.hb-lead{grid-row:1/3;align-self:center;font-size:12.5px;color:var(--ink-2);line-height:1.25;min-width:0}
+.hb-lead small{display:block;color:var(--muted);font-size:11.5px}
+.hb-name{grid-column:2/4;font-size:13px;color:var(--ink);font-weight:500;line-height:1.25;min-width:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.hb-name span{color:var(--muted);font-weight:400}
+.hb-track{grid-column:2;grid-row:2;position:relative;border-left:1px solid var(--line-2)}
+.hb-bar{height:100%;border-radius:0 4px 4px 0;background:var(--open);min-width:2px}
+.hb-bar.closed{background:var(--closed)}
+.hb-bar.none{background:none}
+.hb-ref{position:absolute;top:-3px;bottom:-3px;border-left:1.5px dashed var(--ink-2);pointer-events:none}
+.hb-val{grid-column:3;grid-row:2;font:13px/16px var(--mono);font-variant-numeric:tabular-nums;text-align:right;color:var(--ink)}
+.hb-row.hov{cursor:pointer}
+.hb-row.hov:hover .hb-name{text-decoration:underline;text-underline-offset:3px;text-decoration-color:var(--line-2)}
+@media (max-width:520px){.hb-row{--lead:78px}.hb-lead{font-size:12px}}
+
+details.tv{margin-top:12px;border-top:1px solid var(--line);padding-top:10px}
+details.tv summary{cursor:pointer;font-size:13px;color:var(--ink-2);width:max-content;max-width:100%}
+details.tv .tablewrap{margin-top:10px;max-height:340px;overflow:auto;border-radius:10px}
+details.tv table{font-size:13px}
+details.tv th{position:sticky;top:0;z-index:1}
+
+/* tooltip */
+.tip{position:fixed;z-index:50;max-width:min(300px,calc(100vw - 24px));background:var(--surface);border:1px solid var(--line-2);border-radius:12px;box-shadow:var(--shadow);padding:10px 12px;font-size:13px;pointer-events:none;display:grid;gap:3px}
+.tip.pinned{pointer-events:auto}
+.tip-h{display:flex;align-items:center;gap:8px;font-weight:600;font-size:14px;line-height:1.25}
+.tip-sub{color:var(--muted);font-size:12.5px;margin-bottom:4px}
+.tip-row{display:flex;justify-content:space-between;gap:14px}
+.tip-row span{color:var(--ink-2)}
+.tip-row b{font-family:var(--mono);font-weight:500}
+.tip-act{display:flex;gap:8px;align-items:center;margin-top:8px}
+.tip-hint{font-size:11.5px;color:var(--muted);margin-top:4px}
+.tip:not(.pinned) .tip-act{display:none}
+.tip.pinned .tip-hint{display:none}
+
+/* compare */
+.picker{display:flex;flex-wrap:wrap;gap:8px;align-items:center}
+.picker select{min-width:0;flex:1 1 240px;max-width:360px}
+.chips{display:flex;flex-wrap:wrap;gap:8px}
+.chip{display:inline-flex;align-items:center;gap:8px;border:1px solid var(--line-2);border-radius:999px;padding:4px 6px 4px 10px;background:var(--surface);font-size:13.5px;font-weight:500}
+.chip button{appearance:none;border:0;background:var(--surface-2);border-radius:50%;width:22px;height:22px;cursor:pointer;color:var(--ink-2);line-height:1;font-size:15px;display:inline-grid;place-items:center}
+.chip button:hover{color:var(--ink)}
+.cmp{table-layout:fixed}
+.cmp th[scope=row]{width:180px;font-size:12px;color:var(--muted);text-transform:uppercase;letter-spacing:.05em;font-weight:500;position:sticky;left:0;background:var(--surface);z-index:1;box-shadow:inset -1px 0 0 var(--line);min-width:140px}
+.cmp thead th{text-transform:none;letter-spacing:0;font-size:14px;color:var(--ink);font-weight:600;white-space:normal;vertical-align:bottom}
+.cmp thead th.c-hd{position:sticky;left:0;z-index:1;width:180px}
+@media (max-width:520px){.cmp th[scope=row],.cmp thead th.c-hd{width:118px;font-size:11px}}
+.cmp thead th .mmaker{font-weight:400}
+.cmp td{white-space:normal;vertical-align:top;overflow-wrap:anywhere}
+.cmp td.num{text-align:left}
+.cmp td.best{font-weight:600}
+.cmp td.best::after{content:" ▲ best";font:500 10.5px var(--sans);color:var(--muted);letter-spacing:.04em}
+.cmp tr.sec th{background:var(--surface-2);color:var(--ink-2);font-weight:600}
+.cmp tr.sec td{background:var(--surface-2)}
+.cmpbars{display:grid;grid-template-columns:repeat(auto-fill,minmax(320px,1fr));gap:16px}
+@media (max-width:420px){.cmpbars{grid-template-columns:minmax(0,1fr)}}
+.quick{display:flex;flex-wrap:wrap;gap:8px;margin-top:10px}
+
+/* guide */
+.bgrid{display:grid;grid-template-columns:repeat(auto-fill,minmax(300px,1fr));gap:14px}
+.bcard{display:grid;gap:8px;align-content:start}
+.bcard h3 a{text-decoration:none}
+.bcard h3 a:hover{text-decoration:underline}
+.bmeta{font-size:12.5px;color:var(--muted)}
+.bcard p{margin:0;font-size:14px;color:var(--ink-2)}
+.lead{display:flex;justify-content:space-between;gap:10px;border-top:1px solid var(--line);padding-top:8px;font-size:13.5px}
+.lead b{font-family:var(--mono);font-weight:500}
+.prose{max-width:76ch}
+.prose p,.prose li{color:var(--ink-2);font-size:14.5px}
+.prose h3{margin:0 0 6px}
+.prose ul{padding-left:20px;margin:6px 0}
+.formula{font:13px/1.6 var(--mono);background:var(--surface-2);border-radius:10px;padding:10px 12px;overflow-x:auto;color:var(--ink)}
+.srcs{columns:2 320px;column-gap:28px;padding-left:18px;margin:8px 0 0;font-size:13.5px}
+.srcs li{break-inside:avoid;margin-bottom:6px;color:var(--ink-2)}
+
+/* tray */
+.tray{position:fixed;left:0;right:0;bottom:0;z-index:30;padding-bottom:calc(10px + env(safe-area-inset-bottom,0px));padding-top:10px;background:color-mix(in srgb,var(--surface) 92%,transparent);backdrop-filter:blur(8px);-webkit-backdrop-filter:blur(8px);border-top:1px solid var(--line-2)}
+.tray .wrap{display:flex;align-items:center;gap:10px}
+.tray .names{flex:1;min-width:0;font-size:13.5px;color:var(--ink-2);overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.tray .names b{color:var(--ink)}
+.toast{position:fixed;left:50%;transform:translateX(-50%);bottom:calc(76px + env(safe-area-inset-bottom,0px));z-index:40;background:var(--sel);color:var(--sel-ink);padding:8px 14px;border-radius:10px;font-size:13.5px;box-shadow:var(--shadow);max-width:calc(100vw - 32px)}
+footer .wrap{padding-block:0 36px;font-size:12.5px;color:var(--muted)}
+</style>
+
+<header class="top">
+  <div class="wrap">
+    <div class="kicker">System One · typed decision models · snapshot 21 Oct 2026</div>
+    <h1>Decision Model Explorer</h1>
+    <p class="lede">Every Jev-class model we could find (hosted APIs, open weights, vLLM-SR's d3 family, Hugging Face checkpoints and Google's on-device toolkit) in one place. Filter them, chart score against size, and compare up to four side by side.</p>
+    <div class="prims"><span>Answers in one forward pass:</span><span class="prim">choice</span><span class="prim">noul · yes/no</span><span class="prim">score</span><span class="prim">box</span></div>
+    <div class="stats" id="stats"></div>
+  </div>
+</header>
+
+<div class="tabbar">
+  <div class="wrap">
+    <div class="tabs" role="tablist" aria-label="Views">
+      <button class="tab" role="tab" id="t-explorer" aria-controls="v-explorer" data-tab="explorer">Explorer</button>
+      <button class="tab" role="tab" id="t-charts" aria-controls="v-charts" data-tab="charts">Charts</button>
+      <button class="tab" role="tab" id="t-compare" aria-controls="v-compare" data-tab="compare">Compare <span class="count" id="pickCount"></span></button>
+      <button class="tab" role="tab" id="t-guide" aria-controls="v-guide" data-tab="guide">Benchmarks guide</button>
+    </div>
+  </div>
+</div>
+
+<main>
+  <div class="wrap">
+
+    <!-- EXPLORER -->
+    <section class="view" id="v-explorer" role="tabpanel" aria-labelledby="t-explorer">
+      <div class="filters">
+        <div class="search field">
+          <svg viewBox="0 0 24 24" aria-hidden="true"><circle cx="11" cy="11" r="7"/><path d="M20 20l-3.5-3.5"/></svg>
+          <input id="q" type="search" placeholder="Search model, maker or base (e.g. Gemma, d3, 4B)" aria-label="Search models" autocomplete="off">
+        </div>
+      </div>
+      <div class="filters">
+        <div class="field"><span class="flabel">Access</span><div class="seg" id="fAcc"></div></div>
+        <div class="field"><label for="fInp">Input</label>
+          <select id="fInp">
+            <option value="any">Any</option>
+            <option value="text">Text only</option>
+            <option value="image">Reads images</option>
+            <option value="video">Reads video</option>
+          </select></div>
+        <div class="field"><label for="fBand">Size</label>
+          <select id="fBand">
+            <option value="all">All sizes</option>
+            <option value="b0">Under 1B</option>
+            <option value="b1">1–5B</option>
+            <option value="b2">5–15B</option>
+            <option value="b3">15–40B</option>
+            <option value="und">Undisclosed</option>
+          </select></div>
+        <label class="check"><input type="checkbox" id="fPerm"> Apache-2.0 / MIT only</label>
+        <div class="gpu" title="Estimate only — see the note below the filters">
+          <label class="flabel" for="fGpu">Fits my GPU</label>
+          <select id="fGpu">
+            <option value="0">Any</option>
+            <option value="8">8 GB</option>
+            <option value="16">16 GB</option>
+            <option value="24">24 GB</option>
+            <option value="48">48 GB</option>
+            <option value="80">80 GB</option>
+          </select>
+          <div class="seg" id="fPrec" aria-label="Precision"></div>
+        </div>
+        <button class="btn ghost" id="reset" type="button">Reset</button>
+      </div>
+      <div class="status">
+        <span id="resultCount"></span>
+        <span class="est" id="gpuNote">VRAM is an estimate: parameters × bytes per weight (BF16 2, FP8 1, 4-bit ≈0.55) + 20% for KV cache and activations. Long contexts and big batches need more.</span>
+      </div>
+      <div class="tablewrap" id="tw">
+        <table class="grid" id="tbl">
+          <thead><tr id="thead"></tr></thead>
+          <tbody id="tbody"></tbody>
+        </table>
+      </div>
+      <p class="foot">Click a model name for details. Tick up to four boxes to compare. “—” means not published. * = self-reported. Scores on different boards aren't comparable with each other.</p>
+    </section>
+
+    <!-- CHARTS -->
+    <section class="view" id="v-charts" role="tabpanel" aria-labelledby="t-charts" hidden>
+      <div class="card">
+        <div class="cardhead">
+          <div>
+            <div class="flabel">Benchmark for the first two charts</div>
+            <div class="seg pills" id="boardSeg" style="margin-top:8px"></div>
+          </div>
+        </div>
+        <p class="take" id="boardDesc" style="margin-top:10px"></p>
+      </div>
+      <div class="chartgrid">
+        <div class="card wide">
+          <h3>Score vs size</h3>
+          <p class="take" id="scTake"></p>
+          <div class="legend">
+            <span><i class="mk open"></i>Open weights</span>
+            <span><i class="mk closed"></i>API only (closed)</span>
+            <span id="scRefLeg"><i class="mk ref"></i><span id="scRefTxt">Jev 1.13</span></span>
+            <span><i class="mk pick"></i>In your compare list</span>
+          </div>
+          <div class="chost" id="scHost"></div>
+          <p class="foot">Log scale for size (total parameters). Models that don't publish a size sit in the right-hand strip. Hover for details; click a point to pin it and add it to compare. * = self-reported score.</p>
+          <details class="tv"><summary>Show as table</summary><div class="tablewrap" id="scTable"></div></details>
+        </div>
+
+        <div class="card">
+          <h3>Best score in each size band</h3>
+          <p class="take" id="bbTake"></p>
+          <div class="legend">
+            <span><i class="mk open"></i>Open weights</span>
+            <span><i class="mk closed"></i>API only</span>
+            <span id="bbRefLeg"><i class="mk ref"></i><span id="bbRefTxt">Jev 1.13</span></span>
+          </div>
+          <div class="chost" id="bbHost"></div>
+          <details class="tv"><summary>Show as table</summary><div class="tablewrap" id="bbTable"></div></details>
+        </div>
+
+        <div class="card">
+          <div class="cardhead">
+            <div><h3>Cost vs score</h3></div>
+            <div class="seg" id="costSeg"></div>
+          </div>
+          <p class="take" id="cvTake"></p>
+          <div class="legend">
+            <span><i class="mk open"></i>Open weights</span>
+            <span><i class="mk closed"></i>API only</span>
+            <span><i class="mk front"></i>Cost frontier</span>
+          </div>
+          <div class="chost" id="cvHost"></div>
+          <p class="foot">Cost per 1,000 decisions as estimated by Benchmark Heaven (self-hosted on its GPU for open models; API price for closed). Log scale. Only JevBench and ImageJevBench publish costs.</p>
+          <details class="tv"><summary>Show as table</summary><div class="tablewrap" id="cvTable"></div></details>
+        </div>
+
+        <div class="card wide">
+          <h3>Real-world traffic</h3>
+          <p class="take">Jev 1.13 handles about 20× the requests of the most-used alternative. Usage shows adoption, not accuracy.</p>
+          <div class="legend">
+            <span><i class="mk open"></i>Open weights (also hosted)</span>
+            <span><i class="mk closed"></i>API only</span>
+          </div>
+          <div class="chost" id="usHost"></div>
+          <p class="foot">OpenRouter decision-model rankings, weekly requests through 19 Oct 2026 (top 10).</p>
+          <details class="tv"><summary>Show as table</summary><div class="tablewrap" id="usTable"></div></details>
+        </div>
+      </div>
+    </section>
+
+    <!-- COMPARE -->
+    <section class="view" id="v-compare" role="tabpanel" aria-labelledby="t-compare" hidden>
+      <div class="card">
+        <h2 class="h2">Compare models</h2>
+        <p class="sub">Pick up to four. Tick boxes in the Explorer, click points in Charts, or add one here.</p>
+        <div class="picker" style="margin-top:12px">
+          <select id="addSel" aria-label="Add a model to compare"></select>
+          <button class="btn primary" id="addBtn" type="button">Add</button>
+          <button class="btn ghost" id="clearBtn" type="button">Clear all</button>
+        </div>
+        <div class="chips" id="chips" style="margin-top:12px"></div>
+        <div id="quickWrap">
+          <div class="quick" id="quick"></div>
+        </div>
+      </div>
+      <div id="cmpBody"></div>
+    </section>
+
+    <!-- GUIDE -->
+    <section class="view" id="v-guide" role="tabpanel" aria-labelledby="t-guide" hidden>
+      <div>
+        <h2 class="h2">Which benchmark says what</h2>
+        <p class="sub">The independent boards rank models differently, so this page never mixes them in one chart. Pick the board closest to your task.</p>
+      </div>
+      <div class="bgrid" id="bgrid"></div>
+
+      <div class="card prose">
+        <h3>How to read a Capability score</h3>
+        <p>JevBench, ImageJevBench and OpenDecisions report <b>Capability</b> on 0–100: the mean of <b>Intelligence</b> (chance-corrected accuracy) and <b>Calibration</b> (do the probabilities mean what they say). A model only counts as “Jev-class” on Benchmark Heaven's boards if it stays within 2× Jev's cost and latency.</p>
+        <div class="formula">Capability = (Intelligence + Calibration) / 2<br>Chon-1.0-12B: (79.9 + 90.8) / 2 = 85.3</div>
+        <p>Calibration is cheap to improve: temperature scaling alone took zero-shot Gemma 4 31B from 72.9 to 79.6.</p>
+      </div>
+
+      <div class="card prose">
+        <h3>How the “Fits my GPU” estimate works</h3>
+        <div class="formula">VRAM ≈ parameters × bytes per weight × 1.2<br>bytes: BF16 = 2 · FP8 = 1 · 4-bit ≈ 0.55 (incl. scales)</div>
+        <p>The extra 20% covers KV cache and activations for short decision prompts. Check: d3 (26.1B) at BF16 gives ≈63 GB, and vLLM-SR measured a 62–65 GiB peak per replica. MoE models (26B-A4B) still load every expert, so total size counts. Closed models and undisclosed sizes are hidden when this filter is on.</p>
+      </div>
+
+      <div class="card prose">
+        <h3>Where Jev still wins</h3>
+        <ul>
+          <li><b>Knowledge-heavy multiple choice</b> (BoolQ, MMLU, MMLU-Pro, ARC-Challenge, WinoGrande, SciQ): Jev averages 92.9 against 88.8 for the trained Gemma 4 31B in the Harvard / Kempner paper.</li>
+          <li><b>Option-order stability</b>: the paper's trained 4B model still changes its answer on about 6% of questions when the option order is reversed.</li>
+          <li><b>Traffic</b>: Jev 1.13 and 1.14 together carry over a billion OpenRouter requests a week.</li>
+        </ul>
+      </div>
+
+      <div class="card prose" style="max-width:none">
+        <h3>Sources</h3>
+        <ol class="srcs" id="srcs"></ol>
+        <p class="foot">Vendor claims (TypeSafe's speed multiples, Inception's wins over Jev, GLiDE's and Snap's self-run Decision Index scores) aren't independently verified and are kept in model notes, not in the score columns.</p>
+      </div>
+    </section>
+
+  </div>
+</main>
+
+<footer><div class="wrap">Snapshot as of 21 Oct 2026. New decision models and board revisions land weekly. Full written report: <a href="https://claude.ai/artifact/JiqGsus9UHCE5dyj4caB2r" target="_blank" rel="noopener">Decision Models (Jev-class) — Oct 2026</a>.</div></footer>
+
+<div class="tray" id="tray" hidden>
+  <div class="wrap">
+    <span class="names" id="trayNames"></span>
+    <button class="btn ghost" id="trayClear" type="button">Clear</button>
+    <button class="btn primary" id="trayGo" type="button">Compare →</button>
+  </div>
+</div>
+<div class="tip" id="tip" hidden role="tooltip"></div>
+<div class="toast" id="toast" hidden role="status"></div>
+
+<script>
+(function(){
+'use strict';
+
+/* ------------------------------------------------------------------ data
+   Sizes in billions of parameters (total). null = not published.
+   jb/ij = JevBench / ImageJevBench Capability (I/C = intelligence/calibration)
+   jdi/jdiv = Jev Decision Index 0.3.2 text / vision · td = Typed Decisions accuracy
+   od = OpenDecisions · aa = Artificial Analysis Decision Index v1.0 · h2h = /82 head-to-head
+   c1k / ic1k = $ per 1,000 decisions on JevBench / ImageJevBench                        */
+const D = [
+// ---- Hosted APIs
+{id:'jev114',n:'Jev 1.14',m:'TypeSafe AI',acc:'closed',inp:'image',p:null,base:'Undisclosed',lic:'Proprietary',date:'14 Oct 2026',price:'$0.042 / M input tokens',c1k:0.032,ic1k:0.16,lat:'0.22 s median on JevBench',ctx:'262K',jb:75.0,jbI:59.9,jbC:90.1,ij:60.2,ijI:49.9,ijC:70.5,note:'Adds the Box primitive (locate a target in an image) and up to 255 options. Image input is in preview. About 194M OpenRouter requests a week.',url:'https://openrouter.ai/docs/guides/community/jev'},
+{id:'jev113',n:'Jev 1.13',m:'TypeSafe AI',acc:'closed',inp:'image',p:null,base:'Undisclosed',lic:'Proprietary',date:'15 Sep 2026',price:'$0.042 / M input tokens',c1k:0.032,ic1k:0.16,lat:'70–500 ms per call; 0.24 s median on JevBench',jb:77.1,jbI:63.6,jbC:90.6,ij:72.4,ijI:59.9,ijC:85.0,td:0.727,od:80.1,h2h:79,note:'The original System One model and the reference every board measures against. About 959M OpenRouter requests a week.',url:'https://typesafe.ai/blog/introducing-system-one-models-and-jev'},
+{id:'sd1',n:'meraGPT Decider 1 (sd-1)',m:'meraGPT',acc:'closed',inp:'text',p:null,base:'Undisclosed',lic:'Proprietary',price:'$0.03 / M input tokens',lat:'526 ms median',td:0.768,self:{td:1},note:'Typed Decisions 0.768 is the maker’s own figure (an earlier version of the dataset card listed it; the current card no longer has a community table). TypeSafe-compatible /v1/systemone endpoint.',url:'https://huggingface.co/datasets/LocalLLaMA/typed-decisions'},
+{id:'pplx11',n:'Perplexity Decider V1.1',m:'Perplexity',acc:'open',api:true,inp:'image',p:27,base:'Qwen3.8-27B',lic:'Apache-2.0',price:'Hosted on OpenRouter',td:0.753,jdi:62.8,jdiv:70.6,h2h:80,note:'Same weights as the hosted API; the Hugging Face repo needs authenticated access. Most-used alternative to Jev on OpenRouter (about 45.4M requests a week).',url:'https://huggingface.co/perplexity-ai/pplx-decider-v1.1-27b'},
+{id:'pplx12',n:'Perplexity Decider V1.2',m:'Perplexity',acc:'open',api:true,inp:'image',p:27,base:'Qwen3.8-27B',lic:'Apache-2.0',date:'16 Oct 2026',price:'$0.02 / M input tokens',note:'Newest release; no independent scores yet (V1.1 scores are on its own row). About 18.1M OpenRouter requests a week.',url:'https://openrouter.ai/models'},
+{id:'pplxflash',n:'Perplexity Decider Flash V1.2',m:'Perplexity',acc:'open',api:true,inp:'image',p:4,base:'Undisclosed 4B',lic:'Apache-2.0',date:'16 Oct 2026',price:'$0.01 / M input tokens',c1k:0.015,jb:62.5,note:'Low-cost sibling on the same API. JevBench score is from a self-hosted copy (pplx-decider-flash-v1.2).'},
+{id:'d1',n:'Liquid d1',m:'Liquid AI',acc:'closed',inp:'image',p:null,base:'LFM (undisclosed size)',lic:'Proprietary',date:'1 Oct 2026',price:'$0.02 / M input tokens',ctx:'66K',h2h:79,note:'Open siblings d1-3B and d1-omni-600M are listed separately. About 16.6M OpenRouter requests a week.',url:'https://openrouter.ai/liquid/d1-ultra/providers'},
+{id:'d1u',n:'Liquid d1-ultra',m:'Liquid AI',acc:'closed',inp:'image',p:null,base:'LFM (undisclosed size)',lic:'Proprietary',date:'15 Oct 2026',price:'$0.042 / M input tokens',ctx:'33K',aa:65.2,note:'#1 on the Artificial Analysis Decision Index v1.0 (13 models).',url:'https://openrouter.ai/liquid/d1-ultra/providers'},
+{id:'mercury',n:'Mercury Decide',m:'Inception',acc:'closed',inp:'image',p:null,base:'Diffusion LM',lic:'Proprietary',date:'30 Sep 2026',price:'$0.02 / M input (50% off); free variant',lat:'Up to 14 decisions/s',ctx:'66K',h2h:76,note:'Diffusion language model. OpenRouter’s decision-model guide lists text and image input. Inception claims wins over Jev on JevBench and LegalBench (vendor claim).',url:'https://openrouter.ai/inception/mercury-decide/providers'},
+{id:'celeris',n:'Celeris-1 Decision',m:'Celeris',acc:'closed',inp:'image',p:null,base:'Diffusion model',lic:'Proprietary',date:'8 Oct 2026',price:'$0.04 / M input tokens',ic1k:0.022,lat:'67 ms median (vendor); 0.89 s on ImageJevBench',ij:58.1,ijI:40.7,ijC:75.6,note:'Vendor: 80.0% on 22 jev-bench sets (Decider 79.0, Jev 73.1) and 76.5% on Typed Decisions. Optional one-line explanations.',url:'https://benchlm.ai/md/decision-models.md'},
+{id:'glide',n:'GLiDE',m:'Fastino',acc:'closed',inp:'text',p:null,base:'Undisclosed',lic:'Proprietary',date:'30 Sep 2026',price:'$0.15 / M input tokens',note:'“Thinking” decision model that reasons internally on uncertain cases. Vendor: Decision Index 0.2.1 64.81 vs Jev 57.91 (self-run).',url:'https://benchlm.ai/md/decision-models.md'},
+{id:'gpt6',n:'GPT-6 Luna Decisions',m:'OpenAI',acc:'closed',inp:'image',p:null,base:'Undisclosed',lic:'Proprietary',price:'~$0.18 per 1k image decisions',ic1k:0.18,ij:62.9,ijI:45.0,ijC:80.7,h2h:76,note:'#5 by OpenRouter usage (about 25.5M requests a week).',url:'https://openrouter.ai/docs/guides/community/jev'},
+{id:'msd1',n:'Microsoft Decision-1',m:'Microsoft',acc:'closed',inp:'text',p:null,base:'Undisclosed',lic:'Proprietary',date:'Oct 2026',price:'~$0.0000036 per question',h2h:75,note:'6th of 14 in one developer’s 82-question head-to-head. The Amos authors measured it at 79.5% on Typed Decisions (their own run).',url:'https://dev.to/akartit/microsoft-decision-1-vs-every-decision-model-on-openrouter-6th-of-14-42l1'},
+{id:'solar',n:'Solar Decide / Flash',m:'Upstage',acc:'closed',inp:'text',p:null,base:'Undisclosed',lic:'Proprietary',h2h:66,note:'Score is Solar Decide in the 82-question head-to-head; Solar Decide Flash scored 67.'},
+{id:'ketteifat',n:'kettei-fat',m:'Sqwish',acc:'closed',inp:'image',p:null,base:'Undisclosed',lic:'Proprietary',date:'Oct 2026',price:'$0.011 per 1k decisions',ic1k:0.011,ij:75.9,ijI:67.3,ijC:84.4,note:'Best image-decision score of any system.',url:'https://benchmarkheaven.com/image-jev-bench'},
+{id:'ketteichub',n:'kettei-chub',m:'Sqwish',acc:'closed',inp:'image',p:null,base:'Undisclosed',lic:'Proprietary',date:'Oct 2026',price:'$0.0073 per 1k decisions',ic1k:0.0073,ij:66.5,ijI:47.8,ijC:85.2,note:'Cheapest system in the ImageJevBench top 10.',url:'https://benchmarkheaven.com/image-jev-bench'},
+{id:'sage',n:'Sage 1.4',m:'Levanto Labs',acc:'closed',inp:'image',p:null,base:'Undisclosed',lic:'Proprietary',date:'Oct 2026',price:'$0.079 per 1k decisions',ic1k:0.079,ij:75.8,ijI:68.1,ijC:83.5,note:'Image input in beta.',url:'https://benchmarkheaven.com/image-jev-bench'},
+{id:'wity',n:'Wity-1',m:'AlphaNimble',acc:'closed',inp:'image',p:null,base:'Undisclosed',lic:'Proprietary',date:'Oct 2026',price:'$0.0087 per 1k decisions',ic1k:0.0087,lat:'2.7 s median',ij:74.0,note:'Too slow to count as Jev-class (2.7 s per decision is outside the latency cap).',url:'https://benchmarkheaven.com/image-jev-bench'},
+{id:'autoloops',n:'Autoloops – Gemma 4 31B',m:'Autoloops (hosted API)',acc:'closed',inp:'image',p:31,base:'Gemma 4 31B',lic:'Proprietary service',ic1k:0.083,ij:68.3,ijI:49.7,ijC:87.0,note:'Hosted decision API built on Gemma 4 31B.',url:'https://benchmarkheaven.com/image-jev-bench'},
+{id:'snap',n:'Snap',m:'Subquadratic',acc:'closed',inp:'text',p:null,base:'Undisclosed',lic:'Proprietary',note:'Vendor: Decision Index 0.2.1 61.70 vs Jev 57.90 (self-run, not on the public board).'},
+{id:'drex15',n:'Drex v1.5',m:'Nace.AI',acc:'closed',inp:null,p:null,base:'Undisclosed',lic:'Proprietary',h2h:72,note:'#4 by OpenRouter usage (about 39.7M requests a week).'},
+{id:'span01',n:'Span-01',m:'Respan',acc:'closed',inp:null,p:null,base:'Undisclosed',lic:'Proprietary',note:'Listed in OpenRouter’s decision-model guide; uses its own state shape. Rejected choice-type calls in the 82-question test, so it has no score.',url:'https://openrouter.ai/docs/guides/community/jev'},
+{id:'classify1',n:'Classify-1',m:'ScaleDown',acc:'closed',inp:null,p:null,base:'Undisclosed',lic:'Proprietary',note:'Listed in OpenRouter’s decision-model guide; uses its own state shape. No public scores.',url:'https://openrouter.ai/docs/guides/community/jev'},
+{id:'drex',n:'Drex v2.0',m:'Nace.AI',acc:'closed',inp:null,p:null,base:'Undisclosed',lic:'Proprietary',note:'#8 by OpenRouter usage (about 22.7M requests a week). The older Drex v1.5 is listed separately.'},
+
+// ---- Open weights on the JevBench board
+{id:'chon',n:'Chon-1.0-12B',m:'Undisclosed',acc:'open',inp:'text',p:12,base:'Undisclosed 12B',lic:'Not stated',c1k:0.050,lat:'0.134 s median',jb:85.3,jbI:79.9,jbC:90.8,note:'Current #1 on JevBench.',url:'https://benchmarkheaven.com/jev-models'},
+{id:'basal',n:'basal-omni-1.0-ultra',m:'Remek Kinas',acc:'open',inp:'image',p:31,base:'Gemma 4 31B + LoRA',lic:'Apache-2.0',c1k:0.045,ic1k:0.085,jb:82.5,jbI:74.1,jbC:91.0,ij:60.6,ijI:51.5,ijC:69.6,note:'Best open model that also reads images on both boards.'},
+{id:'quyetL',n:'Quyet-1.0-Large',m:'Chinh Nguyen',acc:'open',inp:'text',p:31,base:'Gemma 4 31B',lic:'Not stated',c1k:0.045,jb:81.7,jbI:73.4,jbC:90.0,od:81.8,note:'Family also has Medium (Qwen3.5-4B), Small-EN (ModernBERT) and Tiny.',url:'https://huggingface.co/chinhnc/Quyet-1.0-Large'},
+{id:'quyetM',n:'Quyet-1.0-Medium',m:'Chinh Nguyen',acc:'open',inp:'text',p:4,base:'Qwen3.5-4B',lic:'Not stated',c1k:0.017,jb:59.2,jbI:41.7,jbC:76.8,od:58.9,note:'Mid-size member of the Quyet family.',url:'https://huggingface.co/chinhnc/Quyet-1.0-Large'},
+{id:'quyetS',n:'Quyet-1.0-Small-EN',m:'Chinh Nguyen',acc:'open',inp:'text',p:null,base:'ModernBERT encoder',lic:'Not stated',jb:39.5,note:'English-only encoder variant; exact size not stated.',url:'https://huggingface.co/chinhnc/Quyet-1.0-Large'},
+{id:'jeff',n:'Jeff-1.0-Large',m:'Harvard / Kempner',acc:'open',inp:'text',p:31,base:'Gemma 4 31B + LoRA',lic:'Not stated',c1k:0.049,lat:'0.080 s median',jb:81.5,jbI:71.9,jbC:91.1,od:84.4,note:'The open recipe paper: letter-logit readout + temperature scaling + a 400-step LoRA (~5 GPU-hours on 4× H200). Siblings: Jeff-1.0-Qwen-27B (Qwen3.6-27B), Jeff-1.0-Medium (Gemma 4 12B) and Jeff-1.0-Qwen-4B.',url:'https://arxiv.org/pdf/2610.17205'},
+{id:'metask31',n:'metask-jev-rain-31B v3',m:'Not stated',acc:'open',inp:'text',p:31,base:'Undisclosed 31B',lic:'Not stated',c1k:0.049,jb:79.6,jbI:72.6,jbC:86.6,note:'12B and 4B siblings listed separately.'},
+{id:'metask12',n:'metask-jev-rain-12B',m:'Not stated',acc:'open',inp:'text',p:12,base:'Undisclosed 12B',lic:'Not stated',c1k:0.038,jb:77.9,jbI:67.8,jbC:87.9,note:'Beats Jev 1.13 on JevBench at 12B.'},
+{id:'metask4',n:'metask-jev-rain-4B',m:'Not stated',acc:'open',inp:'text',p:4,base:'Undisclosed 4B',lic:'Not stated',c1k:0.040,jb:66.0,jbI:51.1,jbC:80.9},
+{id:'decisio',n:'decisio v0.8.0',m:'Undisclosed',acc:'open',inp:'text',p:31,base:'Frozen Gemma 4 31B, FP8',lic:'Not stated',c1k:0.041,lat:'47 ms on-GPU median',jb:79.6,jbI:70.4,jbC:88.7,note:'No training at all: frozen weights plus a readout.'},
+{id:'deck',n:'deck-31B',m:'krishna765',acc:'open',inp:'text',p:31,base:'Frozen Gemma 4 31B, FP8',lic:'Not stated',c1k:0.048,jb:77.6,jbI:73.0,jbC:82.2,od:81.3,note:'No training.'},
+{id:'rene',n:'René-1 31B',m:'salfatigroup',acc:'open',inp:'text',p:31,base:'Gemma 4 31B-it (FP8 build)',lic:'Not stated',c1k:0.063,jb:76.0,jbI:61.7,jbC:90.2},
+{id:'h2o',n:'H2O-Lightning-4B v1.1',m:'H2O.ai',acc:'open',inp:'image',p:4,base:'Qwen3.5-4B',lic:'Apache-2.0',c1k:0.021,ic1k:0.078,jb:75.0,jbI:60.0,jbC:90.0,ij:60.4,ijI:44.9,ijC:76.0,note:'Best 4B model. Runs on stock vLLM.'},
+{id:'rune',n:'Surogate Rune 26B-A4B v3',m:'Not stated',acc:'open',inp:'image',p:26,act:4,base:'Gemma 4 26B-A4B (MoE)',lic:'Not stated',c1k:0.048,ic1k:0.058,jb:73.5,jbI:56.1,jbC:90.9,ij:64.8,ijI:44.8,ijC:84.8},
+{id:'bobcat',n:'Bobcat Flash 1.2',m:'Undisclosed',acc:'open',inp:'text',p:26,act:4,base:'Gemma 4 26B-A4B + LoRA (MoE)',lic:'Not stated',c1k:0.048,jb:73.5,jbI:65.8,jbC:81.2},
+{id:'torch4',n:'Torchcast Decision 4B v1.2',m:'Torchcast AI',acc:'open',inp:'text',p:4,base:'Undisclosed 4B',lic:'Not stated',c1k:0.015,jb:72.6,note:'Cheapest model above 70 on JevBench.'},
+{id:'torch12',n:'Torchcast Decision 12B',m:'Torchcast AI',acc:'open',inp:'text',p:12,base:'Gemma 4 12B-it',lic:'Not stated',c1k:0.028,jb:71.7,jbI:60.5,jbC:82.9,od:78.4},
+{id:'decider12',n:'decider-12b v2',m:'Mapika',acc:'open',inp:'text',p:12,base:'Gemma 4 12B',lic:'Apache-2.0',c1k:0.026,jb:72.5,note:'Trained on ~95 datasets.',url:'https://github.com/Mapika/decider'},
+{id:'decider4',n:'decider-4b v2',m:'Mapika',acc:'open',inp:'text',p:4,base:'Qwen3.5-4B-Base',lic:'Apache-2.0',c1k:0.015,jb:64.9,jbI:40.1,jbC:89.6,od:70.8,url:'https://github.com/Mapika/decider'},
+{id:'decider2',n:'decider-2b',m:'Mapika',acc:'open',inp:'text',p:2,base:'Not stated (12B sibling is Gemma 4)',lic:'Apache-2.0',jb:44.6,url:'https://github.com/Mapika/decider'},
+{id:'xor26',n:'Xor 26B-A4B',m:'Juspay',acc:'open',inp:'text',p:26,act:4,base:'Gemma 4 26B-A4B (MoE)',lic:'Not stated',c1k:0.044,jb:72.4},
+{id:'jevomni',n:'Jev-Omni',m:'akhilaaa3',acc:'open',inp:'image',p:12,base:'Gemma 4 12B',lic:'Not stated',c1k:0.029,ic1k:0.022,jb:71.3,jbI:55.5,jbC:87.0,ij:54.3,ijI:37.5,ijC:71.0},
+{id:'winnow',n:'Winnow-12B',m:'EldanRing',acc:'open',inp:'image',p:12,base:'Gemma 4 12B',lic:'Not stated',c1k:0.028,jb:71.2,jbI:59.5,jbC:83.0,ij:50.0,ijI:38.6,ijC:61.4,ic1k:0.087,od:75.8,url:'https://huggingface.co/EldanRing/Winnow-12B'},
+{id:'cygnet',n:'Cygnet',m:'blockbrain',acc:'open',inp:'text',p:12,base:'Frozen Gemma 4 12B',lic:'Not stated',c1k:0.028,jb:70.9,jbI:54.8,jbC:87.0,od:75.6,note:'No training.'},
+{id:'clefflash',n:'Clef-Flash',m:'Cloudflare',acc:'open',api:true,inp:'video',p:9,base:'Qwen3.5-9B',lic:'Apache-2.0',c1k:0.059,ic1k:0.084,jb:63.8,jbI:42.2,jbC:85.5,h2h:65,ij:52.2,ijI:37.3,ijC:67.2,td:0.710,note:'Also hosted on Workers AI and OpenRouter.',url:'https://huggingface.co/Cloudflare/clef'},
+{id:'clef',n:'Clef',m:'Cloudflare',acc:'open',api:true,inp:'video',p:27,base:'Qwen3.8-27B',lic:'Apache-2.0',ic1k:0.18,ij:58.1,ijI:47.4,ijC:68.8,td:0.728,od:74.4,h2h:71,note:'Also hosted on Workers AI and OpenRouter (about 24.4M OpenRouter requests a week).',url:'https://huggingface.co/Cloudflare/clef'},
+{id:'clefomni',n:'Clef-Omni',m:'Cloudflare',acc:'open',api:true,inp:'omni',p:30,act:3,base:'Qwen3-Omni-30B-A3B-Instruct (MoE)',lic:'Apache-2.0',td:0.673,h2h:72,note:'The only decision model that also takes audio and video alongside text and images.',url:'https://huggingface.co/Cloudflare/clef-omni'},
+{id:'diffjev',n:'Diffusion Jev',m:'Community',acc:'open',inp:'text',p:26,act:4,base:'DiffusionGemma 26B-A4B',lic:'Not stated',c1k:0.048,jb:58.1,note:'Diffusion-LM backbone.'},
+{id:'semif',n:'SemIf',m:'TheoLeeCJ',acc:'open',inp:'text',p:4,base:'Qwen3.5-4B, no training',lic:'MIT',c1k:0.017,jb:55.4,od:62.7,note:'Runs in the browser (WebGPU), on CUDA and on MLX.',url:'https://github.com/TheoLeeCJ/SemIf'},
+{id:'d13b',n:'Liquid d1-3B',m:'Liquid AI',acc:'open',inp:'image',p:3.1,base:'LFM 3.1B',lic:'LFM Open License v1.0',c1k:0.044,ic1k:0.034,jb:49.5,ij:47.8,ijI:16.3,ijC:79.3,note:'Open sibling of the hosted d1.'},
+{id:'d1omni',n:'Liquid d1-omni-600M',m:'Liquid AI',acc:'open',inp:'image',p:0.587,base:'LFM 587M',lic:'LFM Open License v1.0',ij:26.5,note:'Smallest model with an image score.'},
+{id:'nemodiff',n:'Nemotron Diffusion 8B',m:'Community',acc:'open',inp:'text',p:8,base:'Nemotron-Labs-Diffusion-8B',lic:'Not stated',c1k:0.030,jb:47.5,note:'Diffusion-LM backbone.'},
+{id:'kev',n:'kev',m:'Jared Palmer',acc:'open',inp:'text',p:4,base:'Qwen 0.5B–8B + LoRA (4B preview scored)',lic:'Not stated',c1k:0.014,jb:44.0,note:'Drop-in replacement for TypeSafe’s /v1/systemone API.',url:'https://github.com/jaredpalmer/kev'},
+{id:'laya',n:'Laya',m:'NandhaKishorM',acc:'open',inp:'text',p:0.421,base:'421M, non-autoregressive',lic:'Apache-2.0',lat:'~33 ms on a T4',note:'Text in 100+ languages.',url:'https://github.com/NandhaKishorM/laya'},
+{id:'certo',n:'Certo v1',m:'AltSlate Labs',acc:'open',inp:'text',p:0.395,base:'ModernBERT-large encoder',lic:'Not stated',c1k:0.0013,jb:43.2,note:'Encoder; among the cheapest per decision.'},
+{id:'eikos',n:'Eikos-27B',m:'Caio Vicentino',acc:'open',inp:'text',p:27,base:'Qwen3.8-27B',lic:'Not stated',od:83.1,note:'Finance and trading focus.',url:'https://huggingface.co/caiovicentino1/Eikos-27B'},
+{id:'autojev',n:'AutoJev-27B',m:'denis-pplx',acc:'open',inp:'image',p:27,base:'Qwen3.8-27B',lic:'Not stated',ic1k:0.054,ij:62.1,ijI:37.6,ijC:86.7,od:80.5,url:'https://huggingface.co/denis-pplx/autojev-27b'},
+{id:'imajev4',n:'Imajev-4B',m:'Community',acc:'open',inp:'image',p:4,base:'Qwen3.5-4B',lic:'Not stated',c1k:0.017,jb:61.9,jbI:34.6,jbC:89.2,ic1k:0.038,ij:68.0,ijI:49.9,ijC:86.1,note:'Best open model on ImageJevBench; also 61.9 on JevBench.'},
+{id:'imajev9',n:'imajev 9B',m:'mohit67890',acc:'open',inp:'image',p:9,base:'Qwen3.5-9B',lic:'Not stated',ic1k:0.089,ij:67.1,ijI:48.3,ijC:85.8},
+
+// ---- vLLM Semantic Router, Decision 3.0
+{id:'d3',n:'d3',m:'vLLM Semantic Router',acc:'open',inp:'video',p:26.1,base:'Qwen3.8-27B (incl. 0.46B vision encoder)',lic:'Apache-2.0',lat:'54 ms text · 290 ms image · 500 ms 10-s video (one MI325X)',jdi:66.3,jdiv:71.3,td:0.749,note:'#1 of 149 text and #1 of 33 vision entries on the Jev Decision Index. vLLM main serves it natively on /v1/systemone since 14 Oct (nightly builds; v0.31.0 lacks it). Peak 61.8–65.4 GiB per replica at BF16. 27 req/s at p99 < 1 s.',url:'https://huggingface.co/vllm-sr/d3'},
+{id:'d3turbo',n:'d3-turbo',m:'vLLM Semantic Router',acc:'open',inp:'video',p:26,base:'Undisclosed',lic:'Apache-2.0',td:0.736,note:'Runs on the Transformers runtime; vLLM nightly does not support its decision config yet. Its own card estimates 70.2 on the Decision Index (not an official board result).'},
+{id:'d3flash',n:'d3-flash',m:'vLLM Semantic Router',acc:'open',inp:'video',p:8.39,base:'Qwen3.5-9B',lic:'Apache-2.0',lat:'19.2 ms text · 166 ms image (one MI325X)',jdi:55.8,td:0.717,note:'8.39B including a 0.46B vision encoder. Six quantized builds are on Hugging Face. Serve with vllm-sr serve -e vllm-sr/d3-flash (dev channel) or vLLM nightly.',url:'https://huggingface.co/vllm-sr/d3-flash'},
+{id:'d3mini',n:'d3-mini',m:'vLLM Semantic Router',acc:'open',inp:'video',p:4.54,base:'Qwen3.5-4B',lic:'Apache-2.0',jdi:52.6,jdiv:63.2,td:0.743,note:'4.54B including a 0.33B vision encoder. Six quantized builds are on Hugging Face.',url:'https://huggingface.co/vllm-sr/d3-mini'},
+{id:'d3nano',n:'d3-nano',m:'vLLM Semantic Router',acc:'open',inp:'video',p:2.21,base:'Qwen3.5-2B',lic:'Apache-2.0',jdi:38.9,jdiv:54.7,url:'https://huggingface.co/vllm-sr/d3-nano'},
+{id:'d3lite',n:'d3-lite',m:'vLLM Semantic Router',acc:'open',inp:'video',p:0.85,base:'Qwen3.5-0.8B',lic:'Apache-2.0',jdi:32.3,td:0.531,note:'+14.9 on the Decision Index over Decision 2.0’s 0.8B (17.5).',url:'https://huggingface.co/vllm-sr/d3-lite'},
+{id:'d3edge',n:'d3-edge',m:'vLLM Semantic Router',acc:'open',inp:'video',p:0.59,base:'Qwen3.5-0.8B',lic:'Apache-2.0',note:'Smallest d3 size. Its card reports 18.0 on the older Decision Index 0.3.1 and 35.6 on the vision board.',url:'https://huggingface.co/vllm-sr/d3-edge'},
+{id:'dec2',n:'Decision 2.0 (27B)',m:'vLLM Semantic Router',acc:'open',inp:'text',p:27,base:'Qwen3.5 lineage',lic:'Not stated',jdi:55.9,note:'Previous generation; sizes run from 27B down to 0.6B.'},
+{id:'dec2lux',n:'Decision 2.0 Lux 9B',m:'vLLM Semantic Router',acc:'open',inp:'text',p:9,base:'Qwen3.5 lineage',lic:'Not stated',jb:61.6},
+
+// ---- More from Hugging Face
+{id:'jev27vl',n:'JEV-27B-VL',m:'AutoTrust AI Lab',acc:'open',inp:'image',p:28,base:'Qwen3.8-27B + System-1 adapter',lic:'Apache-2.0',ctx:'256K',jdiv:69.6,td:0.688,note:'Its own card cites #1 of 20 on the 7 Oct vision board (69.82); the d3 card lists it at 69.6 on 0.3.2. ~2M downloads a month, up to 256 options, optional “System 2” thinking path.',url:'https://huggingface.co/autotrust/JEV-27B-VL'},
+{id:'jev27',n:'JEV-27B',m:'AutoTrust AI Lab',acc:'open',inp:'text',p:27,base:'Qwen',lic:'Not stated',note:'Vendor: six-benchmark mean 84.07 vs Jev 1.13’s 83.85.'},
+{id:'jev9',n:'JEV-9B',m:'AutoTrust AI Lab',acc:'open',inp:'text',p:9,base:'Qwen',lic:'Not stated',note:'No independent scores published.'},
+{id:'jev35',n:'JEV-35B',m:'AutoTrust AI Lab',acc:'open',inp:'text',p:35,base:'Qwen',lic:'Not stated'},
+{id:'gev26',n:'GEV-26B-Decide',m:'AutoTrust AI Lab',acc:'open',inp:'text',p:26,act:4,base:'Gemma 4 26B-A4B-it',lic:'Not stated',c1k:0.043,jb:70.1,jbI:49.8,jbC:90.3},
+{id:'darwin',n:'Darwin-27B-ZTC v2',m:'VIDRAFT / FINAL-Bench',acc:'open',inp:'text',p:26,base:'Darwin-27B-RSI',lic:'Apache-2.0',jdi:62.5,td:0.743,note:'#1 of 102 on the S1MB board. The v5 checkpoint was trained on Typed Decisions’ train split (0.81, not comparable).',url:'https://huggingface.co/FINAL-Bench/Darwin-27B-ZTC'},
+{id:'amosM',n:'Amos 1 medium',m:'mukaddamzaid',acc:'open',inp:'text',p:9,base:'Qwen3.5-9B',lic:'Apache-2.0',td:0.7645,self:{td:1},note:'Self-reported 76.5% zero-shot on the 2,000-decision test split.',url:'https://huggingface.co/mukaddamzaid/amos-1-large'},
+{id:'amosL',n:'Amos 1 large',m:'mukaddamzaid',acc:'open',inp:'text',p:27,base:'Qwen3.8-27B',lic:'Apache-2.0',td:0.761,self:{td:1},url:'https://huggingface.co/mukaddamzaid/amos-1-large'},
+{id:'linne',n:'linne-oak 1.0',m:'PNPM244',acc:'open',inp:'text',p:31,base:'Gemma 4 31B-it',lic:'Apache-2.0',jdi:65.6,self:{jdi:1},lat:'63 ms median (H200)',note:'Its own card reports 65.61 on the Jev Decision Index 0.3.2 (private parts run by the board maintainers, 14 Oct snapshot).',url:'https://huggingface.co/PNPM244/linne-oak-1-0'},
+{id:'openjev',n:'openjev',m:'openjev',acc:'open',inp:'text',p:27,base:'27B',lic:'Not stated',td:0.728,url:'https://huggingface.co/openjev/openjev'},
+{id:'solomon',n:'Solomon v1.1',m:'DoccyHealth',acc:'open',inp:'image',p:27,base:'27B',lic:'Not stated',jdiv:66.8},
+{id:'xor12',n:'Xor 1.2',m:'Juspay',acc:'open',inp:'image',p:35,act:3,base:'35B-A3B (MoE)',lic:'Not stated',jdiv:64.3,note:'Text sibling Xor 26B-A4B is listed separately.'},
+{id:'anyjev',n:'AnyJev (on Gemma 4 31B)',m:'Nokia Applied Research',acc:'open',inp:'text',p:31,base:'Method; scored as AnyJev L0 on Gemma 4 31B',lic:'Open code',jdi:60.2,note:'A method that turns any LLM into a decision model.',url:'https://github.com/nokia-applied-research/AnyJev'},
+{id:'neohorse',n:'NeoHorse-Jev-4B',m:'TokenRhythm',acc:'open',inp:'image',p:4,base:'NeoHorse-1-4B',lic:'Not stated',ij:57.6,note:'GGUF build available.',url:'https://huggingface.co/TokenRhythm/NeoHorse-Jev-4B'},
+{id:'openjev27',n:'Open-Jev 27B',m:'Zefan Cai',acc:'open',inp:'text',p:27,base:'Qwen 27B',lic:'Not stated',od:71.3,note:'2B and 9B siblings.',url:'https://huggingface.co/ZefanCai/Open-Jev-27B-v1.1'},
+{id:'opendecider',n:'OpenDecider small',m:'manjunathshiva',acc:'open',inp:'text',p:4,base:'LoRA on Qwen3-4B-Instruct-2507',lic:'Apache-2.0',td:0.672,note:'Zero-shot. The family runs from a ~400M nano to an 80B-A3B large; “-td” variants trained on the benchmark split are excluded.',url:'https://huggingface.co/manjunathshiva/opendecider-small'},
+{id:'bosun17',n:'Bosun v3.1 1.7B',m:'Hanno Labs',acc:'open',inp:'text',p:1.7,base:'Qwen3 1.7B',lic:'Not stated',note:'#1 on DecisionBench’s applied suite (vendor-run).'},
+{id:'bosun06',n:'Bosun v3.1 0.6B',m:'Hanno Labs',acc:'open',inp:'text',p:0.6,base:'Qwen3 0.6B',lic:'Not stated',note:'#2 on DecisionBench’s applied suite (vendor-run).'},
+{id:'prokope',n:'ProKope-421M',m:'ProKope-AI',acc:'open',inp:'text',p:0.421,base:'421M specialist',lic:'Not stated',td:0.715,tdTxt:'0.71–0.72',note:'8K-context variant available. Plotted at the midpoint of its 0.71–0.72 range.',url:'https://huggingface.co/ProKope-AI/ProKope-421M'},
+{id:'jevstyle',n:'Jev-Style Decision 2B',m:'chaoliangUNSW',acc:'open',inp:'text',p:2,base:'Qwen3.5 2B (0.8B sibling)',lic:'Not stated',note:'GGUF and MLX builds for laptops.'},
+{id:'deberta',n:'open-jev-deberta-v3-large',m:'Kotoba Labs',acc:'open',inp:'text',p:0.4,base:'DeBERTa-v3-large encoder',lic:'Not stated',note:'CPU-friendly.',url:'https://huggingface.co/com-kotobalabs/open-jev-deberta-v3-large'},
+
+// ---- Google on-device, AWS Strands and other newer releases (added 21 Oct)
+{id:'mediapipe',n:'MediaPipe Decision Maker',m:'Google (AI Edge)',acc:'open',accTxt:'Open (on-device SDK)',inp:'audio',p:null,pTxt:'149M–4B',novram:true,base:'On-device task that runs EmbeddingGemma 1/2, Gemma 4 E2B/E4B, Laya or GLiNER2.5-Decide',lic:'Apache-2.0 code; model licences vary',date:'Page updated 6 Oct 2026',lat:'On-device, CPU or GPU',note:'Google’s only decision-model offering found: an on-device toolkit, not a hosted API or a single model. Answers choice, yes/no and score questions with probabilities, reads Jev request payloads directly, and runs on Android, iOS, Python and the web. Google publishes no accuracy scores for it.',url:'https://developers.google.com/edge/mediapipe/solutions/decision/decision_maker'},
+{id:'strands2b',n:'Strands Decider 2B',m:'AWS Strands Labs',acc:'open',inp:'text',p:2,base:'Qwen3.5-2B + LoRA and a ~1M-parameter pointer head',lic:'Apache-2.0',date:'1 Oct 2026',lat:'106 ms median, 296 ms p95 (RTX 3090)',note:'AWS’s open decision model. Reported at about 72% on the public JevBench with a Brier score of about 0.35; the exact metric and version weren’t published, so it isn’t in the JevBench column.',url:'https://siliconangle.com/?p=848982'},
+{id:'strandsE2B',n:'Strands Decider E2B',m:'AWS Strands Labs',acc:'open',inp:'text',p:2,pTxt:'E2B',novram:true,base:'Gemma 4 E2B-it + LoRA and readout head',lic:'Apache-2.0',date:'15 Oct 2026',lat:'102 ms median (H100)',jv1:77.9,jv1Txt:'77.9% (180/231) · Brier 0.313',note:'Apache-2.0 covers the adapters, heads and code; the Gemma base weights download separately under their own terms. Vendor-run JevBench v1 accuracy, not the Capability score in the JevBench column.',url:'https://strandsagents.com/blog/strands-decider-gemma-4-models/'},
+{id:'strandsE4B',n:'Strands Decider E4B',m:'AWS Strands Labs',acc:'open',inp:'text',p:4,pTxt:'E4B',novram:true,base:'Gemma 4 E4B-it + LoRA and readout head',lic:'Apache-2.0',date:'15 Oct 2026',lat:'139 ms median (H100)',jv1:81.0,jv1Txt:'81.0% (187/231) · Brier 0.243',note:'Apache-2.0 covers the adapters, heads and code; the Gemma base weights download separately under their own terms. Vendor-run JevBench v1 accuracy.',url:'https://strandsagents.com/blog/strands-decider-gemma-4-models/'},
+{id:'strands12',n:'Strands Decider 12B',m:'AWS Strands Labs',acc:'open',inp:'text',p:12,base:'Gemma 4 12B-it + LoRA and readout head',lic:'Apache-2.0',date:'15 Oct 2026',lat:'136 ms median (H100)',jv1:86.6,jv1Txt:'86.6% (200/231) · Brier 0.173',note:'Apache-2.0 covers the adapters, heads and code; the Gemma base weights download separately under their own terms. Vendor-run JevBench v1 accuracy.',url:'https://strandsagents.com/blog/strands-decider-gemma-4-models/'},
+{id:'strands26',n:'Strands Decider 26B-A4B',m:'AWS Strands Labs',acc:'open',inp:'text',p:26,act:4,base:'Gemma 4 26B-A4B-it + LoRA and readout head (MoE)',lic:'Apache-2.0',date:'15 Oct 2026',lat:'245 ms median (H100)',jv1:89.6,jv1Txt:'89.6% (207/231) · Brier 0.162',note:'Best of the Strands family on its own JevBench v1 run. Apache-2.0 covers the adapters, heads and code; the Gemma base weights download separately.',url:'https://strandsagents.com/blog/strands-decider-gemma-4-models/'},
+{id:'s1g26',n:'s1-gemma4-26b-decision',m:'j-raghavan',acc:'open',inp:'text',p:26,act:4,base:'Gemma 4 26B-A4B-it fine-tune (MoE)',lic:'Apache-2.0',lat:'27 ms median (FP8)',note:'Community fine-tune. Describes its outputs as calibrated but publishes no accuracy scores.',url:'https://featherless.ai/models/j-raghavan/s1-gemma4-26b-decision'},
+{id:'decider31',n:'decider-31b',m:'Mapika',acc:'open',inp:'text',p:31,base:'Gemma 4 31B-it fine-tune, NVFP4 weights',lic:'Apache-2.0',lat:'39 ms median, 531 ms p95 (one B300)',jdi:64.6,note:'Listed as “Decider 31B (NVFP4)” at 64.6 on the Jev Decision Index 0.3.2 text board (public suite 64.3).',url:'https://huggingface.co/Mapika/decider-31b'},
+{id:'gliner',n:'GLiNER2.5-Decide',m:'Fastino Labs',acc:'open',api:true,inp:'text',p:0.34,base:'DeBERTa-v3-large encoder (from gliner2-large-v1)',lic:'Apache-2.0',date:'24 Sep 2026',price:'$0.030 / M input tokens (Pioneer AI)',ctx:'512',jdi:9.2,note:'Classifies text against labels supplied at call time; not a reasoning model. The vendor’s own Fast Decisions suite averages 60.2%. Google’s MediaPipe lists smaller 149M/166M cross-encoder builds. How it relates to Fastino’s hosted GLiDE isn’t stated.',url:'https://www.llmreference.com/model/gliner2.5-decide'},
+{id:'gliner1b',n:'GLiNER2.5-Decide 1B',m:'Fastino Labs',acc:'open',inp:'text',p:1,base:'gliner2-xl',lic:'Apache-2.0',note:'Vendor-reported 59.6% exact-match average on 5,100 English examples across 17 domains.',url:'https://www.gradually.ai/en/ai-models/gliner2-5-decide-1b/'},
+{id:'julia1',n:'Julia-1',m:'Supersonic Labs',acc:'open',inp:'text',p:0.1443,base:'mmBERT-small (multilingual ModernBERT) + decision head',lic:'Apache-2.0',date:'Sep 2026',lat:'Runs on CPU (PyTorch) and WebGPU',ctx:'8,192 tokens',td:0.7315,self:{td:1},note:'Smallest model with a Typed Decisions score: 73.15% (1,463 of 2,000), self-reported against Jev’s 72.7%. Whether it trained on the benchmark’s train split isn’t stated. 2–20 options per question.',url:'https://huggingface.co/SupersonicLabs/Julia-1'},
+{id:'tev1',n:'Tev1-4B-experimental',m:'Together AI',acc:'open',api:true,inp:'text',p:4,base:'Qwen3.5-4B, supervised fine-tune',lic:'Not stated',date:'30 Sep 2026',price:'$0.042 / M input tokens',ctx:'33K',lat:'0.34 s P50 on OpenRouter',note:'Weights are on Hugging Face, and Together also publishes the data recipe and training code. 2–24 options per question. No benchmark scores published.',url:'https://openrouter.ai/togethercomputer/tev1-4b-experimental'},
+];
+
+const USAGE = [
+  {n:'Jev 1.13',v:959,id:'jev113'},{n:'Jev 1.14',v:194,id:'jev114'},{n:'Perplexity Decider V1.1',v:45.4,id:'pplx11'},
+  {n:'Drex v1.5 (Nace.AI)',v:39.7,id:'drex15'},{n:'GPT-6 Luna Decisions',v:25.5,id:'gpt6'},{n:'Clef (Cloudflare)',v:24.4,id:'clef'},
+  {n:'Mercury Decide',v:22.9,id:'mercury'},{n:'Drex v2.0 (Nace.AI)',v:22.7,id:'drex'},
+  {n:'Perplexity Decider V1.2',v:18.1,id:'pplx12'},{n:'Liquid d1',v:16.6,id:'d1'}
+];
+
+const BOARDS = [
+  {k:'jb',name:'JevBench',full:'JevBench v1.7.46',by:'Benchmark Heaven (independent)',size:'1,500 decisions per system; 192 open systems ranked',scale:'Capability 0–100',max:100,ref:{v:77.1,label:'Jev 1.13'},leader:'Chon-1.0-12B',lv:'85.3',url:'https://benchmarkheaven.com/jev-models',desc:'Intelligence plus calibration on 1,500 text decisions, with cost and latency capped at 2× Jev.'},
+  {k:'ij',name:'ImageJevBench',full:'ImageJevBench v0.3.0',by:'Benchmark Heaven',size:'2,441 items on 2,160 images',scale:'Capability 0–100',max:100,ref:{v:72.4,label:'Jev 1.13 + images'},leader:'kettei-fat',lv:'75.9',url:'https://benchmarkheaven.com/image-jev-bench',desc:'Same scoring on screenshots, receipts, charts, diagrams and counting. Even the leaders score about 24 on spatial-layout questions.'},
+  {k:'jdi',name:'Decision Index',full:'Jev Decision Index 0.3.2',by:'multimodalart (Hugging Face Space)',size:'140,178 public requests plus private tests; 149 text and 33 vision entries',scale:'Index 0–100',max:100,ref:null,leader:'d3',lv:'66.3',url:'https://huggingface.co/vllm-sr/d3',desc:'Five skill areas from tool use to human judgement. Jev itself isn’t on this version of the board.'},
+  {k:'td',name:'Typed Decisions',full:'Typed Decisions (LocalLLaMA dataset)',by:'LocalLLaMA dataset; scores published by each maker',size:'2,000 test decisions (400 cases × 5)',scale:'Accuracy 0–1',max:1,ref:{v:0.727,label:'Jev 1.13'},leader:'meraGPT Decider 1 (maker-reported)',lv:'0.768',url:'https://huggingface.co/datasets/LocalLLaMA/typed-decisions',desc:'Only Jev 1.13’s 0.727 was measured by the dataset authors. Every other score (marked *) is published by the model’s maker, mostly as Hugging Face eval results; the dataset card no longer carries a community table. Zero-shot scores only.'},
+  {k:'od',name:'OpenDecisions',full:'OpenDecisions (arXiv 2610.17205)',by:'Harvard / Kempner Institute',size:'2,352 questions, 11 families, 23 languages',scale:'Capability 0–100',max:100,ref:{v:80.1,label:'Jev 1.13'},leader:'Jeff-1.0-Large',lv:'84.4',url:'https://arxiv.org/pdf/2610.17205',desc:'Capability on a multilingual set; tracks JevBench rankings closely (Spearman 0.90).'},
+];
+const EXTRA_BOARDS = [
+  {name:'Artificial Analysis Decision Index v1.0',by:'Artificial Analysis',size:'13 decision models',desc:'Accuracy and non-hallucination across tasks.',leader:'d1-ultra',lv:'65.2'},
+  {name:'S1MB',by:'hotchpotch (Hugging Face Space)',size:'102 decision engines',desc:'Borda count and task-average ranking.',leader:'Darwin-27B-ZTC v2',lv:'#1'},
+  {name:'DecisionBench',by:'Hanno Labs (vendor)',size:'43 tasks, 23,900 rows, 28 domains',desc:'Yes/no, choice and ordinal scoring, reported per task.',leader:'Bosun v3.1',lv:'#1'},
+  {name:'82-question head-to-head',by:'One developer (DEV Community)',size:'82 questions, 14 hosted models',desc:'Informal but widely shared. Treat as indicative.',leader:'Perplexity Decider V1.1',lv:'80/82',url:'https://dev.to/akartit/microsoft-decision-1-vs-every-decision-model-on-openrouter-6th-of-14-42l1'},
+  {name:'JevBench v1 accuracy (231 tasks)',by:'AWS Strands Labs (vendor run)',size:'231 tasks',desc:'An older JevBench release scored as plain accuracy plus Brier. Only the Strands Decider family reports it, and it isn\u2019t comparable with the v1.7.46 Capability column.',leader:'Strands Decider 26B-A4B',lv:'89.6%',url:'https://strandsagents.com/blog/strands-decider-gemma-4-models/'},
+];
+const SOURCES = [
+  ['Introducing System One Models & Jev — TypeSafe AI','https://typesafe.ai/blog/introducing-system-one-models-and-jev'],
+  ['Jev documentation and other decision models — OpenRouter','https://openrouter.ai/docs/guides/community/jev'],
+  ['Decision model rankings — OpenRouter','https://openrouter.ai/rankings/decisions'],
+  ['OpenRouter models list','https://openrouter.ai/models'],
+  ['JevBench leaderboard v1.7.46 — Benchmark Heaven','https://benchmarkheaven.com/jev-models'],
+  ['ImageJevBench v0.3.0 — Benchmark Heaven','https://benchmarkheaven.com/image-jev-bench'],
+  ['Releasing the Inner Jev (arXiv 2610.17205)','https://arxiv.org/pdf/2610.17205'],
+  ['JevBench: An Open Evaluation Framework (preprint)','https://www.preprints.org/manuscript/202610.0181'],
+  ['Typed Decisions leaderboard — Hugging Face','https://huggingface.co/datasets/LocalLLaMA/typed-decisions'],
+  ['vllm-sr/d3 model card (Decision 3.0)','https://huggingface.co/vllm-sr/d3'],
+  ['vllm-sr/d3-flash — Hugging Face','https://huggingface.co/vllm-sr/d3-flash'],
+  ['d3-flash serving recipe — vLLM Recipes','https://recipes.vllm.ai/vllm-sr/d3-flash'],
+  ['vLLM PR #61565 (native d3 support)','https://github.com/vllm-project/vllm/pull/61565'],
+  ['autotrust/JEV-27B-VL — Hugging Face','https://huggingface.co/autotrust/JEV-27B-VL'],
+  ['Hugging Face model search: “jev”','https://huggingface.co/models?search=jev'],
+  ['Microsoft Decision-1 vs every decision model — DEV','https://dev.to/akartit/microsoft-decision-1-vs-every-decision-model-on-openrouter-6th-of-14-42l1'],
+  ['Best AI decision models — BenchLM','https://benchlm.ai/md/decision-models.md'],
+  ['Decisions, Decisions: models besides Jev — Forbes','https://www.forbes.com/sites/ronschmelzer/2026/10/12/decisions-decisions-a-guide-to-the-new-wave-of-ai-decision-models-besides-jev/'],
+  ['Awesome System One — GitHub','https://github.com/andyrewlee/awesome-system-one'],
+  ['MediaPipe Decision Maker guide — Google AI Edge','https://developers.google.com/edge/mediapipe/solutions/decision/decision_maker'],
+  ['Strands Decider adds four Gemma 4 models — Strands Agents','https://strandsagents.com/blog/strands-decider-gemma-4-models/'],
+  ['AWS releases Strands Decider 2B — SiliconANGLE','https://siliconangle.com/?p=848982'],
+  ['Mapika/decider-31b — Hugging Face','https://huggingface.co/Mapika/decider-31b'],
+  ['s1-gemma4-26b-decision — Featherless','https://featherless.ai/models/j-raghavan/s1-gemma4-26b-decision'],
+  ['GLiNER2.5-Decide — LLM Reference','https://www.llmreference.com/model/gliner2.5-decide'],
+  ['GLiNER2.5-Decide 1B — gradually.ai','https://www.gradually.ai/en/ai-models/gliner2-5-decide-1b/'],
+  ['SupersonicLabs/Julia-1 — Hugging Face','https://huggingface.co/SupersonicLabs/Julia-1'],
+  ['Tev1-4B-experimental — OpenRouter','https://openrouter.ai/togethercomputer/tev1-4b-experimental'],
+];
+
+// Typed Decisions: only Jev 1.13 was measured by the dataset authors; every other score is maker-published
+D.forEach(m=>{ if(m.td!=null && m.id!=='jev113') m.self=Object.assign({}, m.self||{}, {td:1}); });
+
+/* ------------------------------------------------------------- helpers */
+const BYID = Object.fromEntries(D.map(m=>[m.id,m]));
+const $ = (s,r=document)=>r.querySelector(s);
+function h(tag, props, ...kids){
+  const e=document.createElement(tag);
+  if(props) for(const k in props){
+    const v=props[k]; if(v==null||v===false) continue;
+    if(k==='class') e.className=v;
+    else if(k==='text') e.textContent=v;
+    else if(k.slice(0,2)==='on') e.addEventListener(k.slice(2),v);
+    else e.setAttribute(k, v===true?'':v);
+  }
+  for(const c of kids.flat()){ if(c==null||c===false) continue; e.append(c.nodeType?c:document.createTextNode(String(c))); }
+  return e;
+}
+const NS='http://www.w3.org/2000/svg';
+function sv(tag, attrs, parent){ const e=document.createElementNS(NS,tag); for(const k in attrs){ if(attrs[k]!=null) e.setAttribute(k,attrs[k]); } if(parent) parent.appendChild(e); return e; }
+const store={
+  get(k,d){ try{ const v=localStorage.getItem('dme:'+k); return v==null?d:JSON.parse(v); }catch(e){ return d; } },
+  set(k,v){ try{ localStorage.setItem('dme:'+k, JSON.stringify(v)); }catch(e){} }
+};
+const BOARD = Object.fromEntries(BOARDS.map(b=>[b.k,b]));
+function fmtTd(v){ const r=Math.round(v*1000); return Math.abs(v*1000-r)<1e-6 ? v.toFixed(3) : String(v); }
+function fmtScore(k, v){ if(v==null) return '—'; return k==='td' ? fmtTd(v) : v.toFixed(1); }
+function scoreText(m,k){
+  if(m[k]==null) return '—';
+  if(k==='td' && m.tdTxt) return m.tdTxt;
+  return fmtScore(k,m[k]) + (m.self&&m.self[k]?'*':'');
+}
+function fmtSize(m){
+  if(m.pTxt) return m.pTxt;
+  if(m.p==null) return '—';
+  const p=m.p;
+  const s = p<1 ? Math.round(p*1000)+'M' : (Number.isInteger(p)?p:p.toFixed(1))+'B';
+  return m.act ? s+'-A'+m.act+'B' : s;
+}
+function fmtCost(v){ if(v==null) return '—'; return '$'+(v>=0.1?v.toFixed(2):v>=0.01?v.toFixed(3):v.toFixed(4)); }
+const INP = {text:'Text', image:'Text + images', audio:'Text, images, audio', video:'Text + images + video', omni:'Text, images, audio, video'};
+const INP_SHORT = {text:'Text', image:'Text · img', audio:'Text · img · audio', video:'Text · img · video', omni:'Omni'};
+const INP_RANK = {text:1,image:2,audio:3,video:3,omni:4};
+function accLabel(m){ if(m.accTxt) return m.accTxt; return m.acc==='open' ? (m.api?'Open weights + API':'Open weights') : 'API only'; }
+const PREC = {bf16:{label:'BF16',b:2}, fp8:{label:'FP8',b:1}, q4:{label:'4-bit',b:0.55}};
+function vram(m, prec){ if(m.p==null || m.acc!=='open' || m.novram) return null; return m.p*PREC[prec].b*1.2; }
+function fmtGB(v){ return v==null?'—':'≈'+(v<10?v.toFixed(1):Math.round(v))+' GB'; }
+function bandOf(m){ const p=m.p; if(p==null) return 'und'; if(p<1) return 'b0'; if(p<=5) return 'b1'; if(p<=15) return 'b2'; return 'b3'; }
+const BANDS = [{k:'b0',label:'Under 1B'},{k:'b1',label:'1–5B'},{k:'b2',label:'5–15B'},{k:'b3',label:'15–40B'},{k:'und',label:'Undisclosed'}];
+const isPerm = m => /^(Apache-2\.0|MIT)$/.test(m.lic||'');
+
+/* --------------------------------------------------------------- state */
+const S = {
+  tab:'explorer', q:'', acc:'all', inp:'any', band:'all', perm:false, gpu:0, prec:'bf16',
+  sort:{k:'jb',d:-1}, open:null,
+  picks:(store.get('picks',[])||[]).filter(id=>BYID[id]).slice(0,4),
+  board:'jb', costBoard:'jb'
+};
+const MAXP=4;
+
+/* -------------------------------------------------------------- header */
+(function stats(){
+  const el=$('#stats');
+  const open=D.filter(m=>m.acc==='open').length;
+  const tiles=[
+    ['Models tracked', String(D.length), `${open} open weights · ${D.length-open} API only`],
+    ['Best on text', '85.3', 'Chon-1.0-12B (12B, open) · JevBench'],
+    ['Best on images', '75.9', 'kettei-fat (closed) · ImageJevBench'],
+    ['Most used', '959M', 'Jev 1.13 · OpenRouter requests / week'],
+  ];
+  for(const [k,v,d] of tiles) el.append(h('div',{class:'stat'}, h('div',{class:'k',text:k}), h('div',{class:'v',text:v}), h('div',{class:'d',text:d})));
+})();
+
+/* ---------------------------------------------------------------- tabs */
+const TABS=['explorer','charts','compare','guide'];
+function setTab(t, push){
+  if(!TABS.includes(t)) t='explorer';
+  S.tab=t;
+  for(const x of TABS){
+    $('#t-'+x).setAttribute('aria-selected', String(x===t));
+    $('#t-'+x).tabIndex = x===t?0:-1;
+    $('#v-'+x).hidden = x!==t;
+  }
+  hideTip(true);
+  if(push){ try{ history.replaceState(null,'','#'+t); }catch(e){} }
+  store.set('tab',t);
+  if(t==='charts') renderCharts();
+  if(t==='compare') renderCompare();
+  if(t==='explorer') sizeDetail();
+  updateTray();
+}
+document.querySelectorAll('.tab').forEach(b=>{
+  b.addEventListener('click',()=>{ setTab(b.dataset.tab,true); });
+  b.addEventListener('keydown',e=>{
+    const i=TABS.indexOf(b.dataset.tab);
+    if(e.key==='ArrowRight'||e.key==='ArrowLeft'){
+      const n=TABS[(i+(e.key==='ArrowRight'?1:-1)+TABS.length)%TABS.length];
+      setTab(n,true); $('#t-'+n).focus(); e.preventDefault();
+    }
+  });
+});
+
+/* --------------------------------------------------------- seg control */
+function seg(host, opts, get, set){
+  host.replaceChildren();
+  for(const [v,label] of opts){
+    const b=h('button',{type:'button','aria-pressed':String(get()===v),text:label,onclick:()=>{ set(v); for(const c of host.children) c.setAttribute('aria-pressed', String(c===b)); }});
+    host.append(b);
+  }
+}
+function syncSeg(host, value, opts){ [...host.children].forEach((c,i)=>c.setAttribute('aria-pressed', String(opts[i][0]===value))); }
+
+/* ------------------------------------------------------------ explorer */
+const ACC_OPTS=[['all','All'],['open','Open weights'],['closed','API only']];
+const PREC_OPTS=[['bf16','BF16'],['fp8','FP8'],['q4','4-bit']];
+seg($('#fAcc'), ACC_OPTS, ()=>S.acc, v=>{S.acc=v; renderTable();});
+seg($('#fPrec'), PREC_OPTS, ()=>S.prec, v=>{S.prec=v; renderTable();});
+$('#q').addEventListener('input',e=>{S.q=e.target.value; renderTable();});
+$('#fInp').addEventListener('change',e=>{S.inp=e.target.value; renderTable();});
+$('#fBand').addEventListener('change',e=>{S.band=e.target.value; renderTable();});
+$('#fPerm').addEventListener('change',e=>{S.perm=e.target.checked; renderTable();});
+$('#fGpu').addEventListener('change',e=>{S.gpu=+e.target.value; renderTable();});
+$('#reset').addEventListener('click',()=>{
+  Object.assign(S,{q:'',acc:'all',inp:'any',band:'all',perm:false,gpu:0,prec:'bf16'});
+  $('#q').value=''; $('#fInp').value='any'; $('#fBand').value='all'; $('#fPerm').checked=false; $('#fGpu').value='0';
+  syncSeg($('#fAcc'),'all',ACC_OPTS); syncSeg($('#fPrec'),'bf16',PREC_OPTS);
+  renderTable();
+});
+
+const COLS=[
+  {k:'pick',label:'',cls:'c-pick'},
+  {k:'n',label:'Model',type:'str',cls:'c-model'},
+  {k:'acc',label:'Access',type:'str'},
+  {k:'inp',label:'Input',type:'num',val:m=>m.inp?INP_RANK[m.inp]:null},
+  {k:'p',label:'Size',type:'num',num:true,title:'Total parameters'},
+  {k:'jb',label:'JevBench',type:'num',num:true,score:true,title:'JevBench Capability (0–100)'},
+  {k:'ij',label:'ImageJev',type:'num',num:true,score:true,title:'ImageJevBench Capability (0–100)'},
+  {k:'jdi',label:'Dec. Index',type:'num',num:true,score:true,title:'Jev Decision Index 0.3.2, text'},
+  {k:'td',label:'Typed Dec.',type:'num',num:true,score:true,title:'Typed Decisions accuracy (0–1), zero-shot'},
+  {k:'od',label:'OpenDec.',type:'num',num:true,score:true,title:'OpenDecisions Capability (0–100)'},
+  {k:'c1k',label:'$ / 1k',type:'num',num:true,asc:true,title:'Cost per 1,000 decisions on JevBench'},
+  {k:'vram',label:'VRAM est.',type:'num',num:true,asc:true,val:m=>vram(m,S.prec),title:'Estimated GPU memory at the chosen precision'},
+  {k:'lic',label:'Licence',type:'str'},
+];
+function colVal(c,m){ return c.val ? c.val(m) : m[c.k]; }
+
+function filtered(){
+  const q=S.q.trim().toLowerCase();
+  return D.filter(m=>{
+    if(q){ const hay=(m.n+' '+m.m+' '+(m.base||'')+' '+fmtSize(m)+' '+(m.lic||'')).toLowerCase(); if(!q.split(/\s+/).every(t=>hay.includes(t))) return false; }
+    if(S.acc!=='all' && m.acc!==S.acc) return false;
+    if(S.inp==='text' && m.inp!=='text') return false;
+    if(S.inp==='image' && !['image','audio','video','omni'].includes(m.inp)) return false;
+    if(S.inp==='video' && !['video','omni'].includes(m.inp)) return false;
+    if(S.band!=='all' && bandOf(m)!==S.band) return false;
+    if(S.perm && !isPerm(m)) return false;
+    if(S.gpu){ const v=vram(m,S.prec); if(v==null || v>S.gpu) return false; }
+    return true;
+  });
+}
+function sortRows(rows){
+  const c=COLS.find(x=>x.k===S.sort.k)||COLS[5]; const d=S.sort.d;
+  return rows.slice().sort((a,b)=>{
+    const va=colVal(c,a), vb=colVal(c,b);
+    const na=va==null, nb=vb==null;
+    if(na&&nb) return a.n.localeCompare(b.n);
+    if(na) return 1; if(nb) return -1;
+    if(c.type==='str'){ const r=String(va).localeCompare(String(vb)); return r? r*d : a.n.localeCompare(b.n); }
+    return (va-vb)*d || a.n.localeCompare(b.n);
+  });
+}
+function renderHead(){
+  const tr=$('#thead'); tr.replaceChildren();
+  for(const c of COLS){
+    const th=h('th',{class:(c.cls||'')+(c.num?' num':''),scope:'col',title:c.title||null});
+    if(c.k==='pick'){ th.append(h('span',{class:'flabel',title:'Compare',text:'⇆','aria-label':'Compare'})); tr.append(th); continue; }
+    const active=S.sort.k===c.k;
+    if(active) th.setAttribute('aria-sort', S.sort.d<0?'descending':'ascending');
+    let lbl=c.label; if(c.k==='vram') lbl='VRAM '+PREC[S.prec].label;
+    th.append(h('button',{class:'sortbtn',type:'button',onclick:()=>{
+      if(S.sort.k===c.k) S.sort.d*=-1; else S.sort={k:c.k,d:(c.type==='str'||c.asc)?1:-1};
+      renderTable();
+    }}, lbl, h('span',{class:'arrow','aria-hidden':'true',text: active?(S.sort.d<0?'↓':'↑'):''})));
+    tr.append(th);
+  }
+}
+function renderTable(){
+  renderHead();
+  const rows=sortRows(filtered());
+  const tb=$('#tbody'); tb.replaceChildren();
+  // column leaders among visible rows
+  const tops={};
+  for(const c of COLS) if(c.score){ let best=-Infinity; for(const m of rows) if(m[c.k]!=null && m[c.k]>best) best=m[c.k]; tops[c.k]=best; }
+  const full=S.picks.length>=MAXP;
+  for(const m of rows){
+    const picked=S.picks.includes(m.id);
+    const tr=h('tr',{class:S.open===m.id?'isopen':null});
+    const cb=h('input',{type:'checkbox','aria-label':'Compare '+m.n,checked:picked,disabled:(!picked&&full),title:(!picked&&full)?'Compare holds four models — untick one first':null});
+    cb.addEventListener('change',()=>togglePick(m.id));
+    tr.append(h('td',{class:'c-pick'},cb));
+    tr.append(h('td',{class:'c-model'},
+      h('button',{class:'mname',type:'button','aria-expanded':String(S.open===m.id),onclick:()=>{ S.open = S.open===m.id?null:m.id; renderTable(); }, text:m.n}),
+      h('span',{class:'mmaker',text:m.m})));
+    tr.append(h('td',null,h('span',{class:'acc'},h('i',{class:'mk '+m.acc}), m.acc==='open'?(m.api?'Open + API':'Open'):'API only')));
+    tr.append(h('td',{class:m.inp?null:'na',text:m.inp?INP_SHORT[m.inp]:'—'}));
+    tr.append(h('td',{class:'num'+(m.p==null&&!m.pTxt?' na':''),text:fmtSize(m)}));
+    for(const k of ['jb','ij','jdi','td','od']){
+      const t=scoreText(m,k);
+      tr.append(h('td',{class:'num'+(m[k]==null?' na':'')+(m[k]!=null&&m[k]===tops[k]?' top':''),text:t,title:(m.self&&m.self[k])?'Self-reported':null}));
+    }
+    tr.append(h('td',{class:'num'+(m.c1k==null?' na':''),text:fmtCost(m.c1k)}));
+    const v=vram(m,S.prec);
+    tr.append(h('td',{class:'num'+(v==null?' na':''),text:fmtGB(v)}));
+    tr.append(h('td',{class:(m.lic==='Not stated'?'na':null),text:m.lic||'—'}));
+    tb.append(tr);
+    if(S.open===m.id){
+      tb.append(h('tr',{class:'drow-tr'},h('td',{class:'detailcell',colspan:String(COLS.length)},detailBlock(m))));
+    }
+  }
+  if(!rows.length) tb.append(h('tr',null,h('td',{colspan:String(COLS.length)},h('div',{class:'empty',text:'No models match these filters. Try a bigger GPU, a lower precision, or Reset.'}))));
+  const gpuTxt = S.gpu ? ` that fit ${S.gpu} GB at ${PREC[S.prec].label}` : '';
+  $('#resultCount').replaceChildren(h('span',null,'Showing ',h('b',{text:String(rows.length)}),` of ${D.length} models${gpuTxt}`));
+  sizeDetail();
+  updatePickUI();
+}
+function sizeDetail(){ const tw=$('#tw'); if(tw && tw.clientWidth) tw.style.setProperty('--tw',(tw.clientWidth-2)+'px'); }
+
+function detailBlock(m){
+  const kv=[];
+  const add=(k,v,mono)=>{ if(v==null||v==='') return; kv.push(h('div',null,h('dt',{text:k}),h('dd',{class:mono?'mono':null,text:v}))); };
+  add('Maker',m.m); add('Access',accLabel(m)); add('Input',m.inp?INP[m.inp]:'Not stated');
+  add('Size', (m.p==null&&!m.pTxt)?'Not published':fmtSize(m)+(m.act?' (MoE: '+m.act+'B active)':'')+(m.pTxt&&m.p!=null?' (effective parameters)':''), true);
+  add('Base model',m.base); add('Licence',m.lic); add('Released',m.date); add('API price',m.price);
+  add('Latency',m.lat); add('Context',m.ctx);
+  if(m.jb!=null) add('JevBench', fmtScore('jb',m.jb)+(m.jbI!=null?`  (I ${m.jbI.toFixed(1)} / C ${m.jbC.toFixed(1)})`:''), true);
+  if(m.ij!=null) add('ImageJevBench', fmtScore('ij',m.ij)+(m.ijI!=null?`  (I ${m.ijI.toFixed(1)} / C ${m.ijC.toFixed(1)})`:''), true);
+  if(m.jdi!=null) add('Decision Index 0.3.2 · text', fmtScore('jdi',m.jdi), true);
+  if(m.jdiv!=null) add('Decision Index 0.3.2 · vision', m.jdiv.toFixed(1), true);
+  if(m.td!=null) add('Typed Decisions', scoreText(m,'td')+(m.self&&m.self.td?' (self-reported)':''), true);
+  if(m.od!=null) add('OpenDecisions', fmtScore('od',m.od), true);
+  if(m.aa!=null) add('AA Decision Index v1.0', m.aa.toFixed(1), true);
+  if(m.h2h!=null) add('82-question head-to-head', m.h2h+' / 82', true);
+  if(m.jv1!=null) add('JevBench v1 accuracy (231 tasks)', m.jv1Txt, true);
+  if(m.c1k!=null) add('Cost / 1k decisions (JevBench)', fmtCost(m.c1k), true);
+  if(m.ic1k!=null) add('Cost / 1k decisions (images)', fmtCost(m.ic1k), true);
+  if(vram(m,'bf16')!=null) add('VRAM estimate', `BF16 ${fmtGB(vram(m,'bf16'))} · FP8 ${fmtGB(vram(m,'fp8'))} · 4-bit ${fmtGB(vram(m,'q4'))}`, true);
+  const picked=S.picks.includes(m.id);
+  const acts=h('div',{class:'drow'},
+    h('button',{class:'btn'+(picked?'':' primary'),type:'button',disabled:(!picked&&S.picks.length>=MAXP),onclick:()=>togglePick(m.id),text:picked?'Remove from compare':'Add to compare'}),
+    m.url?h('a',{href:m.url,target:'_blank',rel:'noopener',text:'Source ↗'}):null,
+    m.acc==='open'?h('a',{href:'https://huggingface.co/models?search='+encodeURIComponent(m.n.split(' ')[0]),target:'_blank',rel:'noopener',text:'Search Hugging Face ↗'}):null
+  );
+  return h('div',{class:'detail'}, h('dl',{class:'kv'},kv), m.note?h('p',{class:'note',text:m.note}):null, acts);
+}
+
+/* --------------------------------------------------------------- picks */
+function togglePick(id){
+  const i=S.picks.indexOf(id);
+  if(i>=0){ S.picks.splice(i,1); toast('Removed '+BYID[id].n); }
+  else{
+    if(S.picks.length>=MAXP){ toast('Compare holds four models. Remove one first.'); return; }
+    S.picks.push(id); toast(`Added ${BYID[id].n} (${S.picks.length}/${MAXP})`);
+  }
+  store.set('picks',S.picks);
+  if(S.tab==='explorer') renderTable(); else updatePickUI();
+  if(S.tab==='charts') renderCharts();
+  if(S.tab==='compare') renderCompare();
+  refreshTip();
+}
+function updatePickUI(){ $('#pickCount').textContent = S.picks.length?String(S.picks.length):''; updateTray(); }
+function updateTray(){
+  const show = S.picks.length>0 && S.tab!=='compare';
+  $('#tray').hidden=!show;
+  if(show){
+    $('#trayNames').replaceChildren(h('b',{text:S.picks.length+' of '+MAXP}),' picked · ', S.picks.map(id=>BYID[id].n).join(', '));
+  }
+}
+$('#trayGo').addEventListener('click',()=>{ setTab('compare',true); window.scrollTo({top:0}); });
+$('#trayClear').addEventListener('click',()=>{ S.picks=[]; store.set('picks',S.picks); if(S.tab==='explorer') renderTable(); else updatePickUI(); if(S.tab==='charts') renderCharts(); });
+let toastT=null;
+function toast(msg){ const t=$('#toast'); t.textContent=msg; t.hidden=false; clearTimeout(toastT); toastT=setTimeout(()=>{t.hidden=true;},1800); }
+
+/* -------------------------------------------------------------- tooltip */
+const tip=$('#tip'); let tipState=null; // {m, lines, x, y, pinned}
+function tipFill(){
+  if(!tipState) return;
+  const {m,lines}=tipState;
+  const picked=S.picks.includes(m.id);
+  tip.replaceChildren(
+    h('div',{class:'tip-h'},h('i',{class:'mk '+m.acc}),h('span',{text:m.n})),
+    h('div',{class:'tip-sub',text:[m.m, accLabel(m), (m.p!=null||m.pTxt)?fmtSize(m):'size not published'].join(' · ')}),
+    ...lines.map(([k,v])=>h('div',{class:'tip-row'},h('span',{text:k}),h('b',{text:v}))),
+    h('div',{class:'tip-act'},
+      h('button',{class:'btn'+(picked?'':' primary'),type:'button',disabled:(!picked&&S.picks.length>=MAXP),onclick:(e)=>{e.stopPropagation(); togglePick(m.id);},text:picked?'Remove from compare':'Add to compare'}),
+      h('button',{class:'btn ghost',type:'button',onclick:(e)=>{e.stopPropagation(); hideTip(true);},text:'Close'})),
+    h('div',{class:'tip-hint',text:'Click to pin and add to compare'})
+  );
+  tip.classList.toggle('pinned',!!tipState.pinned);
+}
+function placeTip(){
+  if(!tipState) return;
+  tip.hidden=false;
+  const r=tip.getBoundingClientRect(); const pad=10;
+  let x=tipState.x+14, y=tipState.y+14;
+  if(x+r.width>innerWidth-pad) x=tipState.x-r.width-14;
+  if(x<pad) x=pad;
+  if(y+r.height>innerHeight-pad) y=tipState.y-r.height-14;
+  if(y<pad) y=pad;
+  tip.style.left=x+'px'; tip.style.top=y+'px';
+}
+function showTip(m, lines, x, y, pinned){ tipState={m,lines,x,y,pinned}; tipFill(); placeTip(); }
+function hideTip(force){ if(!tipState) return; if(tipState.pinned && !force) return; tipState=null; tip.hidden=true; }
+function refreshTip(){ if(tipState){ tipFill(); placeTip(); } }
+document.addEventListener('click',e=>{ if(tipState && tipState.pinned && !tip.contains(e.target) && !(e.target.closest && e.target.closest('[data-hit]'))) hideTip(true); });
+document.addEventListener('keydown',e=>{ if(e.key==='Escape') hideTip(true); });
+window.addEventListener('scroll',()=>hideTip(true),{passive:true});
+function bindHit(node, m, linesFn){
+  node.setAttribute('data-hit','1');
+  node.addEventListener('pointerenter',e=>{ if(e.pointerType==='touch') return; if(tipState&&tipState.pinned) return; showTip(m,linesFn(),e.clientX,e.clientY,false); });
+  node.addEventListener('pointermove',e=>{ if(e.pointerType==='touch') return; if(tipState && !tipState.pinned && tipState.m===m){ tipState.x=e.clientX; tipState.y=e.clientY; placeTip(); } });
+  node.addEventListener('pointerleave',e=>{ if(e.pointerType==='touch') return; hideTip(false); });
+  node.addEventListener('click',e=>{ e.stopPropagation(); showTip(m,linesFn(),e.clientX,e.clientY,true); });
+}
+
+/* --------------------------------------------------------------- charts */
+const BOARD_OPTS=BOARDS.map(b=>[b.k,b.name]);
+seg($('#boardSeg'), BOARD_OPTS, ()=>S.board, v=>{S.board=v; store.set('board',v); renderCharts();});
+const COST_OPTS=[['jb','Text'],['ij','Images']];
+seg($('#costSeg'), COST_OPTS, ()=>S.costBoard, v=>{S.costBoard=v; renderCost();});
+
+function niceY(vals, b){
+  let lo=Math.min(...vals), hi=Math.max(...vals);
+  if(b.ref){ lo=Math.min(lo,b.ref.v); hi=Math.max(hi,b.ref.v); }
+  const unit=b.max===1?0.01:1;
+  const range=(hi-lo)/unit;
+  const step=(range<=16?5:10)*unit;
+  let y0=Math.floor((lo-unit*1.5)/step)*step, y1=Math.ceil((hi+unit*1.5)/step)*step;
+  y0=Math.max(0,y0); y1=Math.min(b.max,y1);
+  const ticks=[]; for(let t=y0; t<=y1+1e-9; t+=step) ticks.push(+t.toFixed(4));
+  return {dom:[y0,y1],ticks,step};
+}
+function textW(s, size){ return s.length*(size||11)*0.56; }
+
+function scatter(host, cfg){
+  host.replaceChildren();
+  const W=Math.max(280, Math.floor(host.clientWidth||600));
+  const narrow=W<560;
+  const H=cfg.height || (narrow?340:420);
+  const mg={l:narrow?40:46, r:10, t:16, b:44};
+  const und=cfg.pts.some(p=>p.x==null);
+  const uw=und?(narrow?56:84):0, ug=und?14:0;
+  const pw=W-mg.l-mg.r-uw-ug, ph=H-mg.t-mg.b;
+  const lx0=Math.log10(cfg.xDom[0]), lx1=Math.log10(cfg.xDom[1]);
+  const X=v=>mg.l+(Math.log10(v)-lx0)/(lx1-lx0)*pw;
+  const Y=v=>mg.t+(1-(v-cfg.yDom[0])/(cfg.yDom[1]-cfg.yDom[0]))*ph;
+  const svg=sv('svg',{viewBox:`0 0 ${W} ${H}`,width:W,height:H,class:'chart',role:'img','aria-label':cfg.aria});
+  // y grid
+  for(const t of cfg.yTicks){
+    sv('line',{x1:mg.l,x2:W-mg.r,y1:Y(t),y2:Y(t),class:'gridl'},svg);
+    sv('text',{x:mg.l-8,y:Y(t)+3.5,'text-anchor':'end',class:'tick'},svg).textContent=cfg.yFmt(t);
+  }
+  // undisclosed strip
+  const ux = mg.l+pw+ug;
+  if(und){
+    sv('rect',{x:ux,y:mg.t,width:uw,height:ph,rx:6,class:'strip'},svg);
+    const t=sv('text',{x:ux+uw/2,y:H-mg.b+18,'text-anchor':'middle',class:'ttl'},svg); t.textContent=narrow?'Undiscl.':'Undisclosed';
+  }
+  // x ticks
+  for(const t of cfg.xTicks){
+    const x=X(t);
+    sv('line',{x1:x,x2:x,y1:mg.t,y2:mg.t+ph,class:'gridl','stroke-dasharray':'2 3'},svg);
+    sv('text',{x,y:H-mg.b+18,'text-anchor':'middle',class:'tick'},svg).textContent=cfg.xFmt(t);
+  }
+  sv('line',{x1:mg.l,x2:mg.l+pw,y1:mg.t+ph,y2:mg.t+ph,class:'base'},svg);
+  // axis titles
+  sv('text',{x:mg.l+pw/2,y:H-6,'text-anchor':'middle',class:'ttl'},svg).textContent=cfg.xTitle;
+  const yt=sv('text',{x:12,y:mg.t+ph/2,'text-anchor':'middle',class:'ttl',transform:`rotate(-90 12 ${mg.t+ph/2})`},svg); yt.textContent=cfg.yTitle;
+  // reference line
+  const labels=[]; // occupied label boxes
+  if(cfg.ref){
+    const y=Y(cfg.ref.v);
+    sv('line',{x1:mg.l,x2:W-mg.r,y1:y,y2:y,class:'ref'},svg);
+  }
+  // frontier
+  if(cfg.frontier && cfg.frontier.length>1){
+    const f=cfg.frontier; let d=`M${X(f[0].x)},${Y(f[0].y)}`;
+    for(let i=1;i<f.length;i++){ d+=` H${X(f[i].x)} V${Y(f[i].y)}`; }
+    d+=` H${mg.l+pw}`;
+    sv('path',{d,class:'front'},svg);
+  }
+  // place dots with simple collision nudging
+  const placed=[];
+  const pts=cfg.pts.slice().sort((a,b)=>b.y-a.y);
+  for(const p of pts){
+    const cy=Y(p.y);
+    const base= p.x==null ? ux+uw/2 : X(p.x);
+    const step = p.x==null ? 10 : 7;
+    const offs=[0]; for(let i=1;i<=6;i++){ offs.push(i*step,-i*step); }
+    let cx=base;
+    for(const o of offs){
+      const c=base+o;
+      if(p.x==null && (c<ux+7 || c>ux+uw-7)) continue;
+      if(!placed.some(q=>Math.hypot(q.cx-c,q.cy-cy)<9)){ cx=c; break; }
+    }
+    p.cx=cx; p.cy=cy; placed.push(p);
+  }
+  const gDots=sv('g',null,svg), gLab=sv('g',null,svg), gHit=sv('g',null,svg);
+  // reference label: pick the spot along the line with no dots under it
+  if(cfg.ref){
+    const y=Y(cfg.ref.v), txt=cfg.ref.label+' · '+cfg.yFmt2(cfg.ref.v), w=textW(txt);
+    const xs=[{x:mg.l+6,a:'start',x0:mg.l+4},{x:mg.l+pw-6,a:'end',x0:mg.l+pw-8-w},{x:mg.l+pw*0.45,a:'middle',x0:mg.l+pw*0.45-w/2-2}];
+    let pick=null;
+    for(const dy of [-6,14]) for(const o of xs){
+      if(pick) break;
+      const bx={x0:o.x0,x1:o.x0+w+4,y0:y+dy-11,y1:y+dy+3};
+      if(!placed.some(q=>q.cx>bx.x0-7&&q.cx<bx.x1+7&&q.cy>bx.y0-7&&q.cy<bx.y1+7)) pick={...o,y:y+dy,b:bx};
+    }
+    if(!pick) pick={...xs[0],y:y-6,b:{x0:xs[0].x0,x1:xs[0].x0+w+4,y0:y-17,y1:y-3}};
+    sv('text',{x:pick.x,y:pick.y,'text-anchor':pick.a,class:'reflab'},gLab).textContent=txt;
+    labels.push(pick.b);
+  }
+  for(const p of placed){
+    const m=p.m;
+    if(S.picks.includes(m.id)) sv('circle',{cx:p.cx,cy:p.cy,r:9,class:'pickring'},gDots);
+    if(m.acc==='open') sv('circle',{cx:p.cx,cy:p.cy,r:5.5,class:'dot open'},gDots);
+    else sv('rect',{x:p.cx-5,y:p.cy-5,width:10,height:10,rx:1.5,class:'dot closed',transform:`rotate(45 ${p.cx} ${p.cy})`},gDots);
+    const hit=sv('circle',{cx:p.cx,cy:p.cy,r:12,class:'hit'},gHit);
+    bindHit(hit,m,()=>cfg.tipLines(p));
+  }
+  // labels
+  const L=mg.l, R=W-mg.r, T=mg.t, B=mg.t+ph;
+  const collide=(b)=>labels.some(o=>!(b.x1<o.x0||b.x0>o.x1||b.y1<o.y0||b.y0>o.y1)) || placed.some(q=>q.cx>b.x0-4&&q.cx<b.x1+4&&q.cy>b.y0-4&&q.cy<b.y1+4);
+  const want=placed.filter(p=>cfg.labelIds.has(p.m.id)).sort((a,b)=>b.y-a.y);
+  for(const p of want){
+    const s=cfg.labelText?cfg.labelText(p):p.m.n; const w=textW(s,11);
+    const cands=[
+      {x:p.cx+10,y:p.cy+4,a:'start',b:{x0:p.cx+9,x1:p.cx+11+w,y0:p.cy-7,y1:p.cy+6}},
+      {x:p.cx-10,y:p.cy+4,a:'end',b:{x0:p.cx-11-w,x1:p.cx-9,y0:p.cy-7,y1:p.cy+6}},
+      {x:p.cx,y:p.cy-11,a:'middle',b:{x0:p.cx-w/2,x1:p.cx+w/2,y0:p.cy-21,y1:p.cy-8}},
+      {x:p.cx,y:p.cy+19,a:'middle',b:{x0:p.cx-w/2,x1:p.cx+w/2,y0:p.cy+8,y1:p.cy+21}},
+    ];
+    for(const c of cands){
+      const b=c.b; if(b.x0<L+2||b.x1>R-2||b.y0<T-12||b.y1>B) continue;
+      // ignore this point's own position for the collision test
+      const own=placed.indexOf(p); placed.splice(own,1);
+      const hitAny=collide(b); placed.splice(own,0,p);
+      if(hitAny) continue;
+      sv('text',{x:c.x,y:c.y,'text-anchor':c.a,class:'lab'},gLab).textContent=s;
+      labels.push(b); break;
+    }
+  }
+  host.append(svg);
+}
+
+function hbars(host, items, opt){
+  host.replaceChildren();
+  const wrap=h('div',{class:'hb'});
+  const max=opt.max;
+  for(const it of items){
+    const pct=it.v==null?0:Math.max(0,Math.min(100,it.v/max*100));
+    const track=h('div',{class:'hb-track'}, h('div',{class:'hb-bar '+(it.v==null?'none':it.cls),style:`width:${pct}%`}));
+    if(opt.ref!=null) track.append(h('div',{class:'hb-ref',style:`left:${(opt.ref/max*100)}%`}));
+    const row=h('div',{class:'hb-row'+(it.m?' hov':'')},
+      h('div',{class:'hb-lead'}, it.lead, it.leadSub?h('small',{text:it.leadSub}):null),
+      h('div',{class:'hb-name',title:it.name||''}, it.name||'', it.nameSub?h('span',{text:' · '+it.nameSub}):null),
+      track,
+      h('div',{class:'hb-val',text:it.vText}));
+    if(it.m) bindHit(row,it.m,()=>it.tip||[]);
+    wrap.append(row);
+  }
+  host.append(wrap);
+}
+
+function dataTable(host, head, rows){
+  host.replaceChildren(h('table',{class:'grid'},
+    h('thead',null,h('tr',null,head.map((c,i)=>h('th',{class:i&&c.num?'num':null,scope:'col',text:c.t||c})))),
+    h('tbody',null,rows.map(r=>h('tr',null,r.map((v,i)=>h('td',{class:(head[i].num?'num':null),text:v})))))));
+}
+
+function renderCharts(){
+  if(S.tab!=='charts') return;
+  syncSeg($('#boardSeg'),S.board,BOARD_OPTS);
+  const b=BOARD[S.board];
+  $('#boardDesc').replaceChildren(h('b',{text:b.full}),' · '+b.by+'. '+b.desc+' ', h('span',{class:'muted',text:b.scale+'.'}));
+  renderScatter(b); renderBands(b); renderCost(); renderUsage();
+}
+
+function tipScoreLines(m,k){
+  const L=[[BOARD[k].name, scoreText(m,k)]];
+  if(m.p!=null) L.push(['Size',fmtSize(m)]);
+  if(k==='jb' && m.c1k!=null) L.push(['$ / 1k decisions',fmtCost(m.c1k)]);
+  if(k==='ij' && m.ic1k!=null) L.push(['$ / 1k decisions',fmtCost(m.ic1k)]);
+  if(m.inp) L.push(['Input',INP[m.inp]]);
+  return L;
+}
+
+function renderScatter(b){
+  const k=b.k;
+  const pts=D.filter(m=>m[k]!=null).map(m=>({m,x:m.p,y:m[k]}));
+  const yr=niceY(pts.map(p=>p.y),b);
+  // label leader per size band
+  const best={};
+  for(const p of pts){ const bd=bandOf(p.m); if(!best[bd]||p.y>best[bd].y) best[bd]=p; }
+  const labelIds=new Set(Object.values(best).map(p=>p.m.id));
+  for(const id of S.picks) labelIds.add(id);
+  const fmt=v=>fmtScore(k,v);
+  scatter($('#scHost'),{
+    pts, xDom:[0.1,45], xTicks:(($('#scHost').clientWidth||600)<560?[0.25,1,2,4,8,16,32]:[0.25,0.5,1,2,4,8,16,32]), xFmt:v=>v<1?Math.round(v*1000)+'M':v+'B', xTitle:'Total parameters (log scale)',
+    yDom:yr.dom, yTicks:yr.ticks, yFmt:v=>k==='td'?v.toFixed(2):String(Math.round(v)), yFmt2:fmt, yTitle:b.name+' · '+b.scale,
+    ref:b.ref, labelIds, labelText:p=>p.m.n+((p.m.self&&p.m.self[k])?'*':''), aria:`${b.name} score against model size for ${pts.length} models`,
+    tipLines:p=>tipScoreLines(p.m,k)
+  });
+  // takeaway
+  const top=pts.reduce((a,c)=>c.y>a.y?c:a,pts[0]);
+  let t=`${top.m.n} leads ${b.name} at ${fmt(top.y)}${(top.m.self&&top.m.self[k])?' (maker-reported)':''}`+(top.m.p!=null?` with ${fmtSize(top.m)} parameters.`:' (size not published).');
+  if(b.ref){
+    const others=pts.filter(p=>!/^jev11/.test(p.m.id));
+    const beat=others.filter(p=>p.y>b.ref.v).length;
+    const isSelf=p=>!!(p.m.self&&p.m.self[k]);
+    const anySelf=others.some(p=>p.y>b.ref.v&&isSelf(p));
+    const sizes=others.filter(p=>p.y>b.ref.v&&p.m.p!=null&&!isSelf(p)).map(p=>p.m.p);
+    const mn=sizes.length?Math.min(...sizes):null;
+    t+=` ${beat} of the ${others.length} other models charted here beat ${b.ref.label} (${fmt(b.ref.v)})`+(mn!=null?`, the smallest ${anySelf?'independently scored one ':''}at ${mn<1?Math.round(mn*1000)+'M':mn+'B'}.`:'.');
+  } else t+=' Jev isn’t on this board, so there is no reference line.';
+  $('#scTake').textContent=t;
+  $('#scRefLeg').hidden=!b.ref; if(b.ref) $('#scRefTxt').textContent=b.ref.label+' reference';
+  const rows=pts.slice().sort((a,c)=>c.y-a.y).map(p=>[p.m.n,p.m.m,accLabel(p.m),fmtSize(p.m),scoreText(p.m,k)]);
+  dataTable($('#scTable'),['Model','Maker','Access',{t:'Size',num:true},{t:b.name,num:true}],rows);
+}
+
+function renderBands(b){
+  const k=b.k; const fmt=v=>fmtScore(k,v);
+  const items=BANDS.map(bd=>{
+    const ms=D.filter(m=>bandOf(m)===bd.k && m[k]!=null);
+    const top=ms.reduce((a,c)=>(!a||c[k]>a[k])?c:a,null);
+    return {lead:bd.label, leadSub:ms.length?ms.length+' scored':'none scored', name:top?top.n:'No scored model', nameSub:top?(top.p!=null?fmtSize(top):top.m):null, v:top?top[k]:null, vText:top?scoreText(top,k):'—', cls:top?top.acc:'open', m:top, tip:top?tipScoreLines(top,k):[]};
+  });
+  hbars($('#bbHost'),items,{max:b.max,ref:b.ref?b.ref.v:null});
+  $('#bbRefLeg').hidden=!b.ref; if(b.ref) $('#bbRefTxt').textContent=b.ref.label;
+  const filled=items.filter(i=>i.v!=null);
+  const best=filled.reduce((a,c)=>c.v>a.v?c:a,filled[0]);
+  let t = best.lead==='Undisclosed' ? `The top ${b.name} score comes from a model that doesn\u2019t publish its size (${best.name}).` : `The top ${b.name} score sits in the ${best.lead} band (${best.name}).`;
+  const small=items.find(i=>i.lead==='1–5B'&&i.v!=null);
+  if(small && best.lead!=='1–5B') t+=` The best 1–5B model (${small.name}) reaches ${fmt(small.v)}, ${(small.v/best.v*100).toFixed(0)}% of the leader's score.`;
+  $('#bbTake').textContent=t;
+  dataTable($('#bbTable'),['Size band','Best model',{t:b.name,num:true},{t:'Models scored',num:true}],items.map(i=>[i.lead,i.m?i.name:'—',i.vText,i.leadSub.replace(' scored','')]));
+}
+
+function renderCost(){
+  if(S.tab!=='charts') return;
+  syncSeg($('#costSeg'),S.costBoard,COST_OPTS);
+  const k=S.costBoard, ck=k==='jb'?'c1k':'ic1k', b=BOARD[k];
+  const pts=D.filter(m=>m[k]!=null&&m[ck]!=null).map(m=>({m,x:m[ck],y:m[k]}));
+  // cost frontier: best score at or below each cost
+  const byCost=pts.slice().sort((a,c)=>a.x-c.x||c.y-a.y);
+  const front=[]; let best=-Infinity;
+  for(const p of byCost){ if(p.y>best){ front.push(p); best=p.y; } }
+  const labelIds=new Set(front.map(p=>p.m.id)); labelIds.add('jev113');
+  const yr=niceY(pts.map(p=>p.y),{...b,ref:null});
+  scatter($('#cvHost'),{
+    pts, xDom:[0.001,0.25], xTicks:[0.001,0.003,0.01,0.03,0.1], xFmt:v=>'$'+v, xTitle:'Cost per 1,000 decisions (log scale)',
+    yDom:yr.dom, yTicks:yr.ticks, yFmt:v=>String(Math.round(v)), yFmt2:v=>v.toFixed(1), yTitle:b.name+' Capability',
+    ref:null, frontier:front, labelIds, height:(($('#cvHost').clientWidth||600)<560?320:360),
+    aria:`${b.name} score against cost per 1,000 decisions`,
+    tipLines:p=>{ const L=[[b.name,fmtScore(k,p.y)],['$ / 1k decisions',fmtCost(p.x)]]; if(p.m.p!=null) L.push(['Size',fmtSize(p.m)]); if(front.includes(p)) L.push(['Frontier','best score at this cost']); return L; }
+  });
+  const top=front[front.length-1], cheap=front[0];
+  let t;
+  if(k==='jb'){
+    const h2o=pts.find(p=>p.m.id==='h2o'), jev=pts.find(p=>p.m.id==='jev113');
+    t=`${top.m.n} buys the top score for ${fmtCost(top.x)} per 1k decisions. `+(h2o&&jev?`H2O-Lightning-4B gets within ${(jev.y-h2o.y).toFixed(1)} points of Jev 1.13 for ${Math.round((1-h2o.x/jev.x)*100)}% less.`:'');
+  } else {
+    t=`Closed models own the image frontier: ${front.map(p=>p.m.n).join(', ')}. The leader costs ${fmtCost(top.x)} per 1k decisions, ${Math.round(0.16/top.x)}× cheaper than Jev with images.`;
+  }
+  $('#cvTake').textContent=t;
+  dataTable($('#cvTable'),['Model','Access',{t:'$ / 1k',num:true},{t:b.name,num:true},'On frontier'],pts.slice().sort((a,c)=>a.x-c.x).map(p=>[p.m.n,accLabel(p.m),fmtCost(p.x),fmtScore(k,p.y),front.includes(p)?'Yes':'']));
+}
+
+function renderUsage(){
+  const items=USAGE.map(u=>{ const m=BYID[u.id]; return {lead:'',name:u.n,nameSub:m?accLabel(m):null,v:u.v,vText:(u.v>=100?Math.round(u.v):u.v)+'M',cls:m?m.acc:'closed',m,tip:[['Requests / week',u.v+'M'],['Input',m&&m.inp?INP[m.inp]:'—']]}; });
+  hbars($('#usHost'),items,{max:1000,ref:null});
+  $('#usHost').querySelectorAll('.hb-row').forEach(r=>r.style.setProperty('--lead','0px'));
+  dataTable($('#usTable'),['Model','Access',{t:'Requests / week',num:true}],USAGE.map(u=>[u.n,BYID[u.id]?accLabel(BYID[u.id]):'—',u.v+'M']));
+}
+
+/* -------------------------------------------------------------- compare */
+function fillAddSel(){
+  const sel=$('#addSel'); sel.replaceChildren(h('option',{value:'',text:'Choose a model…'}));
+  const groups=[['API only',D.filter(m=>m.acc==='closed')],['Open weights',D.filter(m=>m.acc==='open')]];
+  for(const [g,ms] of groups){
+    const og=h('optgroup',{label:g});
+    for(const m of ms.slice().sort((a,b)=>a.n.localeCompare(b.n))) og.append(h('option',{value:m.id,text:m.n+(m.p!=null?' · '+fmtSize(m):''),disabled:S.picks.includes(m.id)}));
+    sel.append(og);
+  }
+}
+$('#addBtn').addEventListener('click',()=>{ const v=$('#addSel').value; if(v && !S.picks.includes(v)) togglePick(v); });
+$('#clearBtn').addEventListener('click',()=>{ S.picks=[]; store.set('picks',S.picks); updatePickUI(); renderCompare(); });
+const QUICK=[
+  ['Jev vs the open leaders',['jev113','chon','basal','h2o']],
+  ['vLLM-SR d3 family',['d3','d3flash','d3mini','d3lite']],
+  ['Best image models',['ketteifat','sage','jev113','imajev4']],
+  ['Small and cheap',['h2o','torch4','pplxflash','semif']],
+];
+function renderCompare(){
+  if(S.tab!=='compare') return;
+  fillAddSel();
+  $('#addBtn').disabled=S.picks.length>=MAXP;
+  const chips=$('#chips'); chips.replaceChildren();
+  for(const id of S.picks){ const m=BYID[id]; chips.append(h('span',{class:'chip'},h('i',{class:'mk '+m.acc}),m.n,h('button',{type:'button','aria-label':'Remove '+m.n,onclick:()=>togglePick(id),text:'×'}))); }
+  const q=$('#quick'); q.replaceChildren(h('span',{class:'flabel',style:'align-self:center',text:S.picks.length?'Or load a set:':'Start with a set:'}));
+  for(const [label,ids] of QUICK) q.append(h('button',{class:'btn',type:'button',text:label,onclick:()=>{ S.picks=ids.slice(); store.set('picks',S.picks); updatePickUI(); renderCompare(); }}));
+  const body=$('#cmpBody'); body.replaceChildren();
+  const ms=S.picks.map(id=>BYID[id]);
+  if(!ms.length){ body.append(h('div',{class:'card empty',text:'Nothing picked yet. Load a set above, or tick models in the Explorer.'})); return; }
+
+  const rows=[
+    ['sec','Basics'],
+    ['Maker',m=>m.m],['Access',m=>accLabel(m)],['Input',m=>m.inp?INP[m.inp]:'Not stated'],
+    ['Size',m=>(m.p==null&&!m.pTxt)?'Not published':fmtSize(m)],['Base model',m=>m.base||'—'],['Licence',m=>m.lic||'—'],['Released',m=>m.date||'—'],
+    ['sec','Cost and speed'],
+    ['API price',m=>m.price||'—'],['$ / 1k decisions (JevBench)',m=>fmtCost(m.c1k),{key:'c1k',best:'min'}],['$ / 1k decisions (images)',m=>fmtCost(m.ic1k),{key:'ic1k',best:'min'}],
+    ['Latency',m=>m.lat||'—'],['Context',m=>m.ctx||'—'],
+    ['VRAM BF16 / FP8 / 4-bit',m=>(m.acc==='open'&&m.p!=null)?`${fmtGB(vram(m,'bf16'))} / ${fmtGB(vram(m,'fp8'))} / ${fmtGB(vram(m,'q4'))}`:'—'],
+    ['sec','Scores (higher is better)'],
+    ['JevBench',m=>m.jb==null?'—':fmtScore('jb',m.jb)+(m.jbI!=null?` (I ${m.jbI.toFixed(1)} / C ${m.jbC.toFixed(1)})`:''),{key:'jb',best:'max'}],
+    ['ImageJevBench',m=>m.ij==null?'—':fmtScore('ij',m.ij)+(m.ijI!=null?` (I ${m.ijI.toFixed(1)} / C ${m.ijC.toFixed(1)})`:''),{key:'ij',best:'max'}],
+    ['Decision Index · text',m=>scoreText(m,'jdi'),{key:'jdi',best:'max'}],
+    ['Decision Index · vision',m=>m.jdiv==null?'—':m.jdiv.toFixed(1),{key:'jdiv',best:'max'}],
+    ['Typed Decisions',m=>scoreText(m,'td'),{key:'td',best:'max'}],
+    ['OpenDecisions',m=>scoreText(m,'od'),{key:'od',best:'max'}],
+    ['AA Decision Index',m=>m.aa==null?'—':m.aa.toFixed(1),{key:'aa',best:'max'}],
+    ['82-question head-to-head',m=>m.h2h==null?'—':m.h2h+' / 82',{key:'h2h',best:'max'}],
+    ['JevBench v1 accuracy (231 tasks)',m=>m.jv1Txt||'—',{key:'jv1',best:'max'}],
+    ['sec','Notes'],
+    ['Notes',m=>m.note||'—'],
+  ];
+  const tbody=h('tbody');
+  for(const r of rows){
+    if(r[0]==='sec'){ tbody.append(h('tr',{class:'sec'},h('th',{scope:'row',text:r[1]}),ms.map(()=>h('td')))); continue; }
+    const [label,fn,o]=r;
+    if(ms.every(m=>{ const v=fn(m); return v==='—'||v==null; })) continue;
+    let bestV=null;
+    if(o){ const vals=ms.map(m=>m[o.key]).filter(v=>v!=null); if(vals.length>1) bestV=o.best==='max'?Math.max(...vals):Math.min(...vals); }
+    tbody.append(h('tr',null,h('th',{scope:'row',text:label}), ms.map(m=>h('td',{class:(o?'num':'')+(bestV!=null&&m[o.key]===bestV?' best':''),text:fn(m)}))));
+  }
+  // remove section headers with no rows under them
+  [...tbody.querySelectorAll('tr.sec')].forEach(tr=>{ const nx=tr.nextElementSibling; if(!nx||nx.classList.contains('sec')) tr.remove(); });
+  tbody.append(h('tr',null,h('th',{scope:'row',text:'Links'}),ms.map(m=>h('td',null,m.url?h('a',{href:m.url,target:'_blank',rel:'noopener',text:'Source ↗'}):h('span',{class:'muted',text:'—'})))));
+  const thead=h('thead',null,h('tr',null,h('th',{scope:'col',class:'c-hd'},''),ms.map(m=>h('th',{scope:'col'},h('span',{class:'acc'},h('i',{class:'mk '+m.acc}),m.n),h('span',{class:'mmaker',text:m.m+(m.p!=null?' · '+fmtSize(m):'')})))));
+  body.append(h('div',{class:'card',style:'padding:0;overflow:hidden'},h('div',{class:'tablewrap',style:'border:0;border-radius:0'},h('table',{class:'grid cmp',style:`min-width:${innerWidth<=520?118+ms.length*165:180+ms.length*190}px`},thead,tbody))));
+
+  // benchmark bars
+  const boards=[...BOARDS,{k:'jdiv',name:'Decision Index · vision',max:100,ref:null},{k:'h2h',name:'82-question head-to-head',max:82,ref:null}];
+  const grid=h('div',{class:'cmpbars'});
+  let any=0;
+  for(const b of boards){
+    const scored=ms.filter(m=>m[b.k]!=null);
+    if(!scored.length) continue; any++;
+    const card=h('div',{class:'card'},h('h3',{text:b.name}),h('p',{class:'take',text:`${scored.length} of ${ms.length} picked models scored`+(b.ref?` · dashed line = ${b.ref.label} (${fmtScore(b.k,b.ref.v)})`:'')+'.'}));
+    const host=h('div',{class:'chost',style:'min-height:0'}); card.append(host);
+    hbars(host, ms.map(m=>({lead:'',name:m.n,nameSub:null,v:m[b.k],vText:m[b.k]==null?'—':(b.k==='h2h'?m.h2h+'/82':(b.k==='jdiv'?m.jdiv.toFixed(1):scoreText(m,b.k))),cls:m.acc,m,tip:[[b.name,m[b.k]==null?'not scored':(b.k==='h2h'?m.h2h+' / 82':String(m[b.k]))]]})),{max:b.max,ref:b.ref?b.ref.v:null});
+    host.querySelectorAll('.hb-row').forEach(r=>r.style.setProperty('--lead','0px'));
+    grid.append(card);
+  }
+  if(any){
+    body.append(h('div',{style:'display:grid;gap:10px'},
+      h('div',null,h('h2',{class:'h2',text:'Benchmarks side by side'}),h('p',{class:'sub',text:'One chart per board, because the boards don’t share a scale. Bars start at zero; empty rows mean the model isn’t on that board.'})),
+      h('div',{class:'legend',style:'margin:0'},h('span',null,h('i',{class:'mk open'}),'Open weights'),h('span',null,h('i',{class:'mk closed'}),'API only'),h('span',null,h('i',{class:'mk ref'}),'Jev reference')),
+      grid));
+  } else body.append(h('div',{class:'card empty',text:'None of these models has an independent benchmark score yet.'}));
+}
+
+/* ---------------------------------------------------------------- guide */
+(function guide(){
+  const g=$('#bgrid');
+  for(const b of BOARDS){
+    g.append(h('div',{class:'card bcard'},
+      h('h3',null,h('a',{href:b.url,target:'_blank',rel:'noopener',text:b.full+' ↗'})),
+      h('div',{class:'bmeta',text:b.by+' · '+b.size}),
+      h('p',{text:b.desc}),
+      h('div',{class:'bmeta',text:'Scale: '+b.scale+(b.ref?' · Jev 1.13 scores '+fmtScore(b.k,b.ref.v):'')}),
+      h('div',{class:'lead'},h('span',null,'Leader: '+b.leader),h('b',{text:b.lv})),
+      h('div',null,h('button',{class:'btn',type:'button',text:'Chart this board →',onclick:()=>{ S.board=b.k; store.set('board',b.k); setTab('charts',true); window.scrollTo({top:0}); }}))
+    ));
+  }
+  for(const b of EXTRA_BOARDS){
+    g.append(h('div',{class:'card bcard'},
+      h('h3',null,b.url?h('a',{href:b.url,target:'_blank',rel:'noopener',text:b.name+' ↗'}):b.name),
+      h('div',{class:'bmeta',text:b.by+' · '+b.size}),
+      h('p',{text:b.desc}),
+      h('div',{class:'lead'},h('span',null,'Leader: '+b.leader),h('b',{text:b.lv}))));
+  }
+  const ol=$('#srcs');
+  for(const [t,u] of SOURCES) ol.append(h('li',null,h('a',{href:u,target:'_blank',rel:'noopener',text:t})));
+})();
+
+/* ----------------------------------------------------------------- boot */
+let rT=null;
+const ro=new ResizeObserver(()=>{ clearTimeout(rT); rT=setTimeout(()=>{ if(S.tab==='charts') renderCharts(); if(S.tab==='explorer') sizeDetail(); },120); });
+ro.observe(document.querySelector('main'));
+S.board = BOARD[store.get('board','jb')] ? store.get('board','jb') : 'jb';
+renderTable();
+let start='explorer';
+try{ const hsh=(location.hash||'').replace('#',''); if(TABS.includes(hsh)) start=hsh; }catch(e){}
+setTab(start,false);
+})();
+</script>
+
+</body></html>
